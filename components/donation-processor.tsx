@@ -284,6 +284,55 @@ export default function DonationProcessor() {
     return false
   }
 
+  const removePostcodeFromAddress = (address: any, postcode: any): string => {
+    if (!address) return ''
+    let addrStr = String(address).trim()
+
+    // Only remove if postcode exists and matches the valid UK format "XXX XXXX"
+    if (postcode) {
+      const postcodeStr = String(postcode).trim().toUpperCase()
+
+      // Check if postcode matches valid UK format: 1-2 letters + 1-2 digits + space + digit + 2 letters
+      // e.g., "AB12 3CD", "A1A 1AA", "M1 1AE"
+      const validPostcodePattern = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s\d[A-Z]{2}$/
+
+      if (validPostcodePattern.test(postcodeStr)) {
+        // Remove the postcode from the address if it's there
+        const escapedPostcode = postcodeStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const noSpacePostcode = postcodeStr.replace(/\s/g, '')
+
+        // Remove with space
+        addrStr = addrStr.replace(new RegExp(`\\b${escapedPostcode}\\b`, 'gi'), '').trim()
+        // Also remove without space in case it's concatenated
+        addrStr = addrStr.replace(new RegExp(`\\b${noSpacePostcode}\\b`, 'gi'), '').trim()
+      }
+    }
+
+    // Clean up multiple spaces
+    addrStr = addrStr.replace(/\s+/g, ' ').trim()
+
+    return addrStr
+  }
+
+  const hasDuplicateWords = (address: any): boolean => {
+    if (!address) return false
+    const addrStr = String(address).trim()
+
+    // Split into words, convert to lowercase for comparison, and filter out empty strings
+    const words = addrStr.toLowerCase().split(/\s+/).filter(w => w.length > 0)
+
+    // Check if any word appears more than once
+    const wordSet = new Set<string>()
+    for (const word of words) {
+      if (wordSet.has(word)) {
+        return true
+      }
+      wordSet.add(word)
+    }
+
+    return false
+  }
+
   const formatPostcode = (pc: any): string | null => {
     if (!pc) return null
     let pcStr = String(pc).trim().toUpperCase()
@@ -513,9 +562,16 @@ export default function DonationProcessor() {
     const finalFirstName = String(updated['First Name'] || '').trim()
     const finalLastName = String(updated['Last Name'] || '').trim()
 
+    // Remove postcode from address
+    const originalAddress = String(updated['Gift Aid Address 1'] || '')
+    const postcode = String(record['Gift Aid Postal Code'] || '')
+    const cleanedAddress = removePostcodeFromAddress(originalAddress, postcode)
+    const addressHasDuplicateWords = hasDuplicateWords(cleanedAddress)
+
     const needsReview =
       needsColoringPostcode(record['Gift Aid Postal Code']) ||
       needsColoringAddress(record['Gift Aid Address 1']) ||
+      addressHasDuplicateWords ||
       !record['Last Donation Date'] ||
       !finalFirstName ||
       !finalLastName
@@ -524,7 +580,7 @@ export default function DonationProcessor() {
       'Title': title,
       'First Name': String(updated['First Name'] || ''),
       'Last Name': String(updated['Last Name'] || ''),
-      'Address': String(updated['Gift Aid Address 1'] || ''),
+      'Address': cleanedAddress,
       'Postcode': needsReview ? String(record['Gift Aid Postal Code'] || '') : formatPostcode(record['Gift Aid Postal Code']),
       'Donation Date': formatDate(record['Last Donation Date']),
       'Donation Amount': Number(record['Total Donation Amount']) || 0,
