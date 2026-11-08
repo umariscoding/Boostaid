@@ -1,0 +1,92 @@
+import {
+  date,
+  index,
+  integer,
+  numeric,
+  pgEnum,
+  pgSequence,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core'
+
+export const claimStatus = pgEnum('claim_status', ['pending', 'submitted', 'received'])
+export type ClaimStatus = (typeof claimStatus.enumValues)[number]
+
+/** Monotonic counter used to build human-readable claim references (GA-2026-0001). */
+export const claimRefSeq = pgSequence('claim_ref_seq', { startWith: 1 })
+
+/** One upload that was processed through the cleaner. */
+export const batches = pgTable('batches', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  filename: text('filename').notNull(),
+  totalRecords: integer('total_records').notNull().default(0),
+  eligibleRecords: integer('eligible_records').notNull().default(0),
+  validRecords: integer('valid_records').notNull().default(0),
+  invalidRecords: integer('invalid_records').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** One HMRC submission file (up to 1000 donations). This is what gets tracked. */
+export const claims = pgTable(
+  'claims',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ref: text('ref').notNull().unique(),
+    batchId: uuid('batch_id')
+      .notNull()
+      .references(() => batches.id, { onDelete: 'cascade' }),
+    chunkIndex: integer('chunk_index').notNull(),
+    status: claimStatus('status').notNull().default('pending'),
+    donationCount: integer('donation_count').notNull(),
+    totalAmount: numeric('total_amount', { precision: 12, scale: 2 }).notNull(),
+    /** Optional reference issued by HMRC once the claim is submitted. */
+    hmrcRef: text('hmrc_ref'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    submittedAt: timestamp('submitted_at', { withTimezone: true }),
+    receivedAt: timestamp('received_at', { withTimezone: true }),
+  },
+  (t) => [index('claims_status_idx').on(t.status), index('claims_batch_idx').on(t.batchId)]
+)
+
+/** Append-only status history, for audit. */
+export const claimEvents = pgTable(
+  'claim_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    claimId: uuid('claim_id')
+      .notNull()
+      .references(() => claims.id, { onDelete: 'cascade' }),
+    status: claimStatus('status').notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+    note: text('note'),
+  },
+  (t) => [index('claim_events_claim_idx').on(t.claimId)]
+)
+
+/** One donation row included in a claim. Powers the donor lookup. */
+export const donations = pgTable(
+  'donations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    claimId: uuid('claim_id')
+      .notNull()
+      .references(() => claims.id, { onDelete: 'cascade' }),
+    title: text('title').notNull().default(''),
+    firstName: text('first_name').notNull().default(''),
+    lastName: text('last_name').notNull().default(''),
+    address: text('address').notNull().default(''),
+    postcode: text('postcode').notNull().default(''),
+    /** Upper-cased, whitespace-free postcode for matching. */
+    postcodeNorm: text('postcode_norm').notNull().default(''),
+    donationDate: date('donation_date'),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  },
+  (t) => [
+    index('donations_claim_idx').on(t.claimId),
+    index('donations_postcode_idx').on(t.postcodeNorm),
+    index('donations_last_name_idx').on(t.lastName),
+  ]
+)

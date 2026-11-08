@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SESSION_COOKIE, verifySessionToken } from '@/lib/session'
+
+const PUBLIC_PREFIXES = ['/login', '/api/auth/login', '/_next/', '/favicon.ico', '/icon.svg']
 
 export function proxy(request: NextRequest) {
-  const session = request.cookies.get('boostaid_session')
   const { pathname } = request.nextUrl
+  const authed = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value)
 
-  // Allow access to login page, API routes, and static files
-  if (
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/') ||
-    pathname.startsWith('/favicon.ico') ||
-    pathname.startsWith('/icon.svg') ||
-    pathname.startsWith('/tempxl.xlsx')
-  ) {
-    // If already logged in and trying to access login page, redirect to home
-    if (pathname.startsWith('/login') && session?.value === 'authenticated') {
+  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+    // Already logged in and visiting the login page: go home
+    if (pathname.startsWith('/login') && authed) {
       return NextResponse.redirect(new URL('/', request.url))
     }
     return NextResponse.next()
   }
 
-  // If not authenticated, redirect to login
-  if (!session || session.value !== 'authenticated') {
+  if (!authed) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

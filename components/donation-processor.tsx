@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Download, FileSpreadsheet, AlertCircle, CheckCircle2, Eye, Loader2, Check, ChevronLeft, ChevronRight, FileUp, Columns, Sparkles, FileText, RotateCcw, Coins, ShieldCheck } from 'lucide-react'
 import ColumnMapper from './column-mapper'
+import AppHeader from './app-header'
+import Link from 'next/link'
+import { sanitizeRecords } from '@/lib/sanitize'
 
 interface DonationRecord {
   [key: string]: any
@@ -35,6 +38,7 @@ interface ProcessingAnalytics {
   addressesShortened: number
   postcodesCorrected: number
   datesFormatted: number
+  symbolsCleaned: number
   totalCellsModified: number
 }
 
@@ -45,6 +49,7 @@ interface PreviewData {
   beforeAfter: ProcessedRecord[]
   columns: string[]
   rawRecords: any[]
+  symbolsCleaned: number
 }
 
 export default function DonationProcessor() {
@@ -75,6 +80,11 @@ export default function DonationProcessor() {
     analytics: ProcessingAnalytics
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState<{
+    claims: { id: string; ref: string; chunkIndex: number; donationCount: number; totalAmount: number }[]
+    duplicates: { count: number; claimRefs: string[] }
+  } | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [recordsPerPage, setRecordsPerPage] = useState(10)
   const analyticsRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<number>(0)
@@ -601,6 +611,8 @@ export default function DonationProcessor() {
       setFile(selectedFile)
       setError(null)
       setResult(null)
+      setSaved(null)
+      setSaveError(null)
       setColumnMapping(null)
       setShowMapper(false)
       setLoading(true)
@@ -639,6 +651,10 @@ export default function DonationProcessor() {
           allRecords = allRecords.concat(jsonData)
         })
 
+        // Repair garbled characters (e.g. "â€™", "ðŸ˜‡") and strip emoji/symbols from every cell
+        const sanitized = sanitizeRecords(allRecords)
+        allRecords = sanitized.records
+
         const columns = allColumns.length > 0 ? allColumns : (allRecords.length > 0 ? Object.keys(allRecords[0]) : [])
 
         // Check if columns match expected format
@@ -657,7 +673,8 @@ export default function DonationProcessor() {
           eligibleRecords: 0,
           beforeAfter: [],
           columns,
-          rawRecords: allRecords
+          rawRecords: allRecords,
+          symbolsCleaned: sanitized.cellsCleaned
         })
       } catch (err) {
         setError('Error reading file: ' + (err as Error).message)
@@ -733,7 +750,8 @@ export default function DonationProcessor() {
         addressesShortened: 0,
         postcodesCorrected: 0,
         datesFormatted: 0,
-        totalCellsModified: 0
+        symbolsCleaned: preview.symbolsCleaned,
+        totalCellsModified: preview.symbolsCleaned
       }
 
       setProgressTarget(15)
@@ -787,6 +805,44 @@ export default function DonationProcessor() {
 
       setProgressTarget(52)
       await new Promise(r => setTimeout(r, 100))
+
+      // Save the claims (one per HMRC file) so their status can be tracked later.
+      // If saving fails the files are still produced, with a warning shown on screen.
+      let claimRefs: string[] = []
+      setSaved(null)
+      setSaveError(null)
+      try {
+        const res = await fetch('/api/batches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            stats: {
+              totalRecords: allRecords.length,
+              eligibleRecords: eligibleRecords.length,
+              validRecords: allProcessedForCorrect.length,
+              invalidRecords: recordsNeedingReview.length
+            },
+            claims: chunks.map(chunk => ({
+              donations: chunk.map((r: any) => ({
+                title: r.Title,
+                firstName: r['First Name'],
+                lastName: r['Last Name'],
+                address: r.Address,
+                postcode: r.Postcode,
+                donationDate: r['Donation Date'],
+                amount: Number(r['Donation Amount']) || 0
+              }))
+            }))
+          })
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) throw new Error(data?.error || `Server responded ${res.status}`)
+        claimRefs = data.claims.map((c: { ref: string }) => c.ref)
+        setSaved({ claims: data.claims, duplicates: data.duplicates })
+      } catch (err) {
+        setSaveError((err as Error).message)
+      }
 
       // Load the HMRC template from public folder
       const templateResponse = await fetch('/tempxl.xlsx')
@@ -936,7 +992,7 @@ export default function DonationProcessor() {
         const url = window.URL.createObjectURL(blob)
 
         hmrcUrls.push({
-          name: `HMRC_submission_${chunkIndex + 1}.xlsx`,
+          name: `HMRC_submission_${claimRefs[chunkIndex] ?? chunkIndex + 1}.xlsx`,
           url: url
         })
 
@@ -957,7 +1013,7 @@ export default function DonationProcessor() {
         const url = window.URL.createObjectURL(blob)
 
         outputUrls.push({
-          name: `output_sheet_${index + 1}.xlsx`,
+          name: `output_sheet_${claimRefs[index] ?? index + 1}.xlsx`,
           url: url
         })
       })
@@ -1007,6 +1063,8 @@ export default function DonationProcessor() {
     setError(null)
     setPreviewPage(1)
     setDownloadUrls({ cleanedData: null, hmrcFiles: [], outputFiles: [] })
+    setSaved(null)
+    setSaveError(null)
     setProgressTarget(0)
   }
 
@@ -1159,36 +1217,7 @@ export default function DonationProcessor() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <div className="bg-slate-800 border-b border-slate-700/50 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                <FileSpreadsheet className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">BoostAid</h1>
-                <p className="text-slate-400 text-sm">HMRC Gift Aid Submission Tool</p>
-              </div>
-            </div>
-            <Button
-              onClick={async () => {
-                await fetch('/api/auth/logout', { method: 'POST' })
-                window.location.href = '/login'
-              }}
-              variant="outline"
-              size="sm"
-              className="border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-600 hover:text-white"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-              </svg>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AppHeader />
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Upload Section */}
@@ -1640,6 +1669,10 @@ export default function DonationProcessor() {
                     <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Addresses Shortened</div>
                     <div className="text-2xl font-bold text-purple-200">{result.analytics.addressesShortened.toLocaleString()}</div>
                   </div>
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Symbols Cleaned</div>
+                    <div className="text-2xl font-bold text-purple-200">{result.analytics.symbolsCleaned.toLocaleString()}</div>
+                  </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-purple-500/20">
                   <div className="flex items-center justify-between">
@@ -1650,6 +1683,61 @@ export default function DonationProcessor() {
                   </div>
                 </div>
               </div>
+
+              {/* Saved Claims */}
+              {saveError && (
+                <div className="mt-6 p-4 bg-red-500/10 rounded-xl border border-red-500/30 text-sm text-red-200 flex gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
+                  <div>
+                    <div className="font-semibold text-red-100">Claims were not saved</div>
+                    Your files below are fine, but this upload will not appear in Claims or Donor Search ({saveError}).
+                    Process the file again once the problem is fixed.
+                  </div>
+                </div>
+              )}
+              {saved && (
+                <div className="mt-6 p-5 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-purple-500/30">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-purple-400" />
+                      <span className="font-semibold text-white text-lg">Claims Created</span>
+                      <span className="text-sm text-slate-400">all start as Pending</span>
+                    </div>
+                    <Link href="/claims" className="text-sm font-medium text-purple-300 hover:text-purple-200">
+                      Open Claims tracker &rarr;
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {saved.claims.map(c => (
+                      <Link
+                        key={c.id}
+                        href={`/claims/${c.id}`}
+                        className="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-3 hover:bg-slate-800 transition-colors"
+                      >
+                        <div>
+                          <div className="font-mono font-semibold text-white">{c.ref}</div>
+                          <div className="text-xs text-slate-400">{c.donationCount.toLocaleString()} donations</div>
+                        </div>
+                        <div className="text-lg font-bold text-purple-200">
+                          £{c.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {saved.duplicates.count > 0 && (
+                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-200 flex gap-3">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-400" />
+                      <div>
+                        <span className="font-semibold text-amber-100">
+                          {saved.duplicates.count.toLocaleString()} donation{saved.duplicates.count === 1 ? '' : 's'}
+                        </span>{' '}
+                        in this upload already appear in earlier claims ({saved.duplicates.claimRefs.join(', ')}).
+                        Check you are not claiming Gift Aid on them twice.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Download Files Section */}
               <div className="mt-6 space-y-4">

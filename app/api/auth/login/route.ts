@@ -1,24 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const VALID_EMAIL = 'admin@boostaid.com'
-const VALID_PASSWORD = 'Faiz@123'
+import {
+  SESSION_COOKIE,
+  SESSION_MAX_AGE,
+  createSessionToken,
+  safeEqual,
+} from '@/lib/session'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const expectedEmail = process.env.ADMIN_EMAIL
+    const expectedPassword = process.env.ADMIN_PASSWORD
+    if (!expectedEmail || !expectedPassword) {
+      console.error('ADMIN_EMAIL / ADMIN_PASSWORD are not configured')
+      return NextResponse.json(
+        { success: false, error: 'Login is not configured' },
+        { status: 500 }
+      )
+    }
 
-    if (email === VALID_EMAIL && password === VALID_PASSWORD) {
+    const { email, password } = await request.json()
+    const emailOk = safeEqual(String(email ?? '').trim().toLowerCase(), expectedEmail.toLowerCase())
+    const passwordOk = safeEqual(String(password ?? ''), expectedPassword)
+
+    if (emailOk && passwordOk) {
       const response = NextResponse.json({ success: true })
-      
-      // Set HTTP-only cookie for session (expires in 7 days)
-      response.cookies.set('boostaid_session', 'authenticated', {
+      response.cookies.set(SESSION_COOKIE, createSessionToken(), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: SESSION_MAX_AGE,
         path: '/',
       })
-
       return response
     }
 

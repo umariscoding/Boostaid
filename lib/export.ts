@@ -1,0 +1,94 @@
+import * as XLSX from 'xlsx'
+import { asc, desc, eq, inArray, type SQL } from 'drizzle-orm'
+import { batches, claimEvents, claims, donations, getDb } from '@/lib/db'
+
+const fmtDateTime = (d: Date | null) =>
+  d ? d.toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }) : ''
+
+const fmtDate = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '')
+
+const STATUS_LABEL = { pending: 'Pending', submitted: 'Submitted', received: 'Received' } as const
+
+/** Builds the audit workbook (Claims, Donations, Status History) for the given claims filter. */
+export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
+  const db = getDb()
+
+  const claimRows = await db
+    .select({ claim: claims, filename: batches.filename })
+    .from(claims)
+    .innerJoin(batches, eq(batches.id, claims.batchId))
+    .where(where)
+    .orderBy(desc(claims.createdAt), desc(claims.chunkIndex))
+
+  const ids = claimRows.map((r) => r.claim.id)
+  const refById = new Map(claimRows.map((r) => [r.claim.id, r.claim]))
+
+  // Chunked so a large export never exceeds the Postgres parameter limit
+  const donationRows: (typeof donations.$inferSelect)[] = []
+  const eventRows: (typeof claimEvents.$inferSelect)[] = []
+  for (let i = 0; i < ids.length; i += 200) {
+    const slice = ids.slice(i, i + 200)
+    donationRows.push(
+      ...(await db.select().from(donations).where(inArray(donations.claimId, slice)).orderBy(asc(donations.lastName), asc(donations.firstName)))
+    )
+    eventRows.push(...(await db.select().from(claimEvents).where(inArray(claimEvents.claimId, slice)).orderBy(asc(claimEvents.at))))
+  }
+
+  const wb = XLSX.utils.book_new()
+
+  const claimsSheet = XLSX.utils.json_to_sheet(
+    claimRows.map(({ claim: c, filename }) => ({
+      'Claim Reference': c.ref,
+      'HMRC Reference': c.hmrcRef ?? '',
+      Status: STATUS_LABEL[c.status],
+      'Created': fmtDateTime(c.createdAt),
+      'Submitted': fmtDateTime(c.submittedAt),
+      'Received': fmtDateTime(c.receivedAt),
+      Donations: c.donationCount,
+      'Gift Aid Amount (GBP)': Number(c.totalAmount),
+      'Source File': filename,
+      Notes: c.notes ?? '',
+    }))
+  )
+  claimsSheet['!cols'] = [18, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
+  XLSX.utils.book_append_sheet(wb, claimsSheet, 'Claims')
+
+  const donationsSheet = XLSX.utils.json_to_sheet(
+    donationRows.map((d) => ({
+      'Claim Reference': refById.get(d.claimId)?.ref ?? '',
+      'Claim Status': STATUS_LABEL[refById.get(d.claimId)?.status ?? 'pending'],
+      Title: d.title,
+      'First Name': d.firstName,
+      'Last Name': d.lastName,
+      Address: d.address,
+      Postcode: d.postcode,
+      'Donation Date': fmtDate(d.donationDate),
+      'Amount (GBP)': Number(d.amount),
+    }))
+  )
+  donationsSheet['!cols'] = [18, 12, 8, 16, 16, 34, 12, 14, 14].map((wch) => ({ wch }))
+  XLSX.utils.book_append_sheet(wb, donationsSheet, 'Donations')
+
+  const historySheet = XLSX.utils.json_to_sheet(
+    eventRows.map((e) => ({
+      'Claim Reference': refById.get(e.claimId)?.ref ?? '',
+      Status: STATUS_LABEL[e.status],
+      'Changed At': fmtDateTime(e.at),
+      Note: e.note ?? '',
+    }))
+  )
+  historySheet['!cols'] = [18, 12, 18, 40].map((wch) => ({ wch }))
+  XLSX.utils.book_append_sheet(wb, historySheet, 'Status History')
+
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' }) as Buffer
+}
+
+export function xlsxResponse(buffer: Buffer, filename: string): Response {
+  return new Response(new Uint8Array(buffer), {
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    },
+  })
+}
