@@ -282,7 +282,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                       : 'border-line bg-white hover:border-brand/30'
               }`}
             >
-              <div className="text-sm font-semibold text-ink mb-2">
+              <div className="text-sm font-medium text-ink mb-2">
                 {col.key}
                 {col.required && <span className="text-bad ml-1">*</span>}
               </div>
@@ -356,7 +356,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                       draggable={!isUsed}
                       onDragStart={() => handleDragStart(col)}
                       onDragEnd={handleDragEnd}
-                      className={`px-3 py-3 text-left font-semibold whitespace-nowrap transition-colors ${
+                      className={`px-3 py-3 text-left font-medium whitespace-nowrap transition-colors ${
                         isUsed
                           ? 'bg-brand-soft text-brand cursor-not-allowed'
                           : draggedColumn === col
@@ -413,7 +413,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
           ) : (
             <ArrowRight className="w-5 h-5 text-muted" />
           )}
-          <span className={`font-semibold ${isComplete() ? 'text-brand' : 'text-ink'}`}>
+          <span className={`font-medium ${isComplete() ? 'text-brand' : 'text-ink'}`}>
             {isComplete() ? 'Ready to continue' : 'Map all required fields to continue'}
           </span>
         </div>

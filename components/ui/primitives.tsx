@@ -6,7 +6,7 @@ export const card = 'bg-white border border-line rounded-2xl'
 export const inputClass =
   'w-full h-11 px-4 rounded-xl bg-white border border-line text-ink placeholder:text-muted/70 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50'
 export const labelClass = 'block text-sm font-medium text-ink mb-1.5'
-export const th = 'px-5 py-3.5 text-left text-sm font-medium text-muted'
+export const th = 'px-5 py-3.5 text-left text-sm font-medium text-muted whitespace-nowrap'
 export const td = 'px-5 py-4'
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
@@ -62,7 +62,7 @@ export function Pill({
   className?: string
 }) {
   return (
-    <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap', PILL[tone], className)}>
+    <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap', PILL[tone], className)}>
       {children}
     </span>
   )
@@ -79,7 +79,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
       {action ?? (
         <Link
           href="/"
-          className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-semibold text-white hover:bg-black"
+          className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white hover:bg-black"
         >
           Upload new file
         </Link>

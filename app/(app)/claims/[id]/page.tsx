@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Download, Loader2, Trash2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, inputClass, labelClass, th, td } from '@/components/ui/primitives'
+import { Pagination } from '@/components/ui/pagination'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,
@@ -48,6 +49,8 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
   const [filter, setFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
   const load = useCallback(async () => {
     try {
@@ -210,9 +213,9 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
               <h3 className="font-display text-xl font-semibold text-ink">Donations in this claim</h3>
-              <input className={`${inputClass} max-w-xs`} placeholder="Filter by name, address, postcode" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <input className={`${inputClass} max-w-xs`} placeholder="Filter by name, address, postcode" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1) }} />
             </div>
-            <div className="overflow-auto max-h-[560px]">
+            <div className="overflow-auto">
               <table className="w-full text-[15px]">
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b border-line">
@@ -224,9 +227,9 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                   </tr>
                 </thead>
                 <tbody>
-                  {shown.map((d) => (
+                  {shown.slice((page - 1) * pageSize, page * pageSize).map((d) => (
                     <tr key={d.id} className="border-b border-line last:border-0">
-                      <td className={`${td} py-3 font-semibold text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
+                      <td className={`${td} py-3 text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
                       <td className={`${td} py-3 text-ink`}>{d.address}</td>
                       <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
                       <td className={`${td} py-3 text-ink whitespace-nowrap`}>{fmtPlainDate(d.donationDate)}</td>
@@ -241,6 +244,16 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={shown.length}
+              onPage={setPage}
+              onPageSize={(n) => {
+                setPageSize(n)
+                setPage(1)
+              }}
+            />
           </Card>
         </div>
       )}

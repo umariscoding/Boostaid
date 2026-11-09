@@ -43,7 +43,7 @@ export default function Sidebar() {
           <Link
             key={href}
             href={href}
-            className={`flex shrink-0 items-center gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-[15px] font-semibold transition-colors ${
+            className={`flex shrink-0 items-center gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-[15px] font-medium transition-colors ${
               isActive(href) ? 'bg-side-active text-white' : 'text-[#c9c9d8] hover:bg-side-active/60 hover:text-white'
             }`}
           >

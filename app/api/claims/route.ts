@@ -8,6 +8,8 @@ import { toClaimDto } from '@/lib/claims'
 export const GET = withAuth(async (req) => {
   const view = req.nextUrl.searchParams.get('view') ?? 'active'
   const summaryOnly = req.nextUrl.searchParams.get('summary') === '1'
+  const page = Math.max(1, Math.trunc(Number(req.nextUrl.searchParams.get('page'))) || 1)
+  const pageSize = Math.min(100, Math.max(1, Math.trunc(Number(req.nextUrl.searchParams.get('pageSize'))) || 25))
   const db = getDb()
 
   const where =
@@ -31,6 +33,8 @@ export const GET = withAuth(async (req) => {
 
   if (summaryOnly) return NextResponse.json({ summary })
 
+  const [{ total }] = await db.select({ total: sql<number>`count(*)::int` }).from(claims).where(where)
+
   const rows = await db
     .select({
       claim: claims,
@@ -42,10 +46,14 @@ export const GET = withAuth(async (req) => {
     .innerJoin(batches, eq(batches.id, claims.batchId))
     .where(where)
     .orderBy(desc(claims.createdAt), desc(claims.chunkIndex))
-    .limit(1000)
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
 
   return NextResponse.json({
     claims: rows.map((r) => toClaimDto(r.claim, r.filename, { from: r.periodFrom, to: r.periodTo })),
     summary,
+    total,
+    page,
+    pageSize,
   })
 })

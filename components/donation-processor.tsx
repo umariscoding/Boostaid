@@ -6,9 +6,10 @@ import ExcelJS from 'exceljs'
 import { parse, isValid, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Columns, Download, Eye, FileSpreadsheet, FileText, FileUp, Loader2, RotateCcw } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronRight, Columns, Download, Eye, FileSpreadsheet, FileText, FileUp, Loader2, RotateCcw } from 'lucide-react'
 import ColumnMapper from './column-mapper'
 import { PageHeader, Pill, StatTile } from '@/components/ui/primitives'
+import { Pagination } from '@/components/ui/pagination'
 import Link from 'next/link'
 import { sanitizeRecords } from '@/lib/sanitize'
 import { extractHouse } from '@/lib/address'
@@ -92,7 +93,8 @@ export default function DonationProcessor() {
   } | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [recordsPerPage, setRecordsPerPage] = useState(10)
-  const [fixLimit, setFixLimit] = useState(25)
+  const [fixPage, setFixPage] = useState(1)
+  const [fixPageSize, setFixPageSize] = useState(25)
   const [showOutput, setShowOutput] = useState(false)
   const analyticsRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<number>(0)
@@ -626,7 +628,7 @@ export default function DonationProcessor() {
       setResult(null)
       setSaved(null)
       setSaveError(null)
-      setFixLimit(25)
+      setFixPage(1)
       setShowOutput(false)
       setPreviewPage(1)
       setColumnMapping(null)
@@ -1281,7 +1283,7 @@ export default function DonationProcessor() {
   }
 
   const uploadButton = (
-    <label className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-semibold text-white hover:bg-black cursor-pointer">
+    <label className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white hover:bg-black cursor-pointer">
       Upload new file
       <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading || processing} />
     </label>
@@ -1421,14 +1423,14 @@ export default function DonationProcessor() {
                         </tr>
                       </thead>
                       <tbody>
-                        {rowsToFix.slice(0, fixLimit).map((item, idx) => (
+                        {rowsToFix.slice((fixPage - 1) * fixPageSize, fixPage * fixPageSize).map((item, idx) => (
                           <tr key={idx} className="border-b border-line last:border-0">
                             <td className="px-5 py-4">
                               <div className="flex flex-wrap gap-1.5">
                                 {(item.reasons ?? []).map(r => <Pill key={r} tone="bad">{r}</Pill>)}
                               </div>
                             </td>
-                            <td className="px-5 py-4 font-bold text-ink">
+                            <td className="px-5 py-4 text-ink">
                               {[item.processed.Title, item.processed['First Name'], item.processed['Last Name']].filter(Boolean).join(' ') || '—'}
                             </td>
                             <td className="px-5 py-4 text-ink max-w-[220px] truncate">{item.processed.Address || '—'}</td>
@@ -1440,12 +1442,16 @@ export default function DonationProcessor() {
                     </table>
                   </div>
                 )}
-                {rowsToFix.length > fixLimit && (
-                  <div className="border-t border-line px-5 py-3 flex items-center justify-between text-sm">
-                    <span className="text-muted">Showing {fixLimit} of {rowsToFix.length.toLocaleString()}</span>
-                    <Button variant="outline" size="sm" onClick={() => setFixLimit(l => l + 50)}>Show 50 more</Button>
-                  </div>
-                )}
+                <Pagination
+                  page={fixPage}
+                  pageSize={fixPageSize}
+                  total={rowsToFix.length}
+                  onPage={setFixPage}
+                  onPageSize={(n) => {
+                    setFixPageSize(n)
+                    setFixPage(1)
+                  }}
+                />
               </div>
             </div>
 
@@ -1461,63 +1467,46 @@ export default function DonationProcessor() {
                 </div>
                 <ChevronRight className={`w-5 h-5 text-muted transition-transform ${showOutput ? 'rotate-90' : ''}`} />
               </button>
-              {showOutput && (() => {
-                const totalPages = Math.max(1, Math.ceil(eligibleItems.length / recordsPerPage))
-                const startIdx = (previewPage - 1) * recordsPerPage
-                const endIdx = Math.min(startIdx + recordsPerPage, eligibleItems.length)
-                return (
-                  <>
-                    <div className="px-5 py-3 border-t border-line flex flex-wrap items-center justify-end gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted">Show</span>
-                        <select
-                          value={recordsPerPage}
-                          onChange={(e) => { setRecordsPerPage(Number(e.target.value)); setPreviewPage(1) }}
-                          className="h-9 px-3 rounded-full border border-line bg-white text-ink"
-                        >
-                          {[10, 20, 30, 50].map(n => <option key={n} value={n}>{n}</option>)}
-                        </select>
-                      </div>
-                      <span className="text-muted">{eligibleItems.length ? startIdx + 1 : 0}-{endIdx} of {eligibleItems.length.toLocaleString()}</span>
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="outline" onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage === 1}>
-                          <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <span className="px-2 min-w-[60px] text-center text-muted">{previewPage} / {totalPages}</span>
-                        <Button size="icon" variant="outline" onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage === totalPages}>
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto border-t border-line">
-                      <table className="w-full text-sm table-fixed">
-                        <thead>
-                          <tr className="border-b border-line bg-wash">
-                            {['#', 'Title', 'First name', 'Last name', 'House', 'Postcode', 'Date', 'Amount', 'Status'].map((h, i) => (
-                              <th key={h} className={`px-3 py-3 font-medium text-muted ${i === 7 ? 'text-right' : i === 8 ? 'text-center' : 'text-left'} ${i === 0 ? 'w-[50px]' : ''}`}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {eligibleItems.slice(startIdx, startIdx + recordsPerPage).map((item, idx) => (
-                            <tr key={startIdx + idx} className="border-b border-line last:border-0">
-                              <td className="px-3 py-2.5 text-muted">{startIdx + idx + 1}</td>
-                              <td className="px-3 py-2.5 text-ink">{item.processed.Title}</td>
-                              <td className="px-3 py-2.5 text-ink truncate">{item.processed['First Name']}</td>
-                              <td className="px-3 py-2.5 text-ink truncate">{item.processed['Last Name']}</td>
-                              <td className="px-3 py-2.5 text-ink truncate">{item.processed.Address || '—'}</td>
-                              <td className="px-3 py-2.5 text-ink whitespace-nowrap">{item.processed.Postcode || '—'}</td>
-                              <td className="px-3 py-2.5 text-ink">{item.processed['Donation Date'] || '—'}</td>
-                              <td className="px-3 py-2.5 text-right text-ink">{money(Number(item.processed['Donation Amount'] || 0))}</td>
-                              <td className="px-3 py-2.5 text-center">{item.isValid ? <Pill tone="good">OK</Pill> : <Pill tone="warn">Review</Pill>}</td>
-                            </tr>
+              {showOutput && (
+                <>
+                  <div className="overflow-x-auto border-t border-line">
+                    <table className="w-full text-sm table-fixed">
+                      <thead>
+                        <tr className="border-b border-line bg-wash">
+                          {['#', 'Title', 'First name', 'Last name', 'House', 'Postcode', 'Date', 'Amount', 'Status'].map((h, i) => (
+                            <th key={h} className={`px-3 py-3 font-medium text-muted ${i === 7 ? 'text-right' : i === 8 ? 'text-center' : 'text-left'} ${i === 0 ? 'w-[50px]' : ''}`}>{h}</th>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )
-              })()}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {eligibleItems.slice((previewPage - 1) * recordsPerPage, previewPage * recordsPerPage).map((item, idx) => (
+                          <tr key={(previewPage - 1) * recordsPerPage + idx} className="border-b border-line last:border-0">
+                            <td className="px-3 py-2.5 text-muted">{(previewPage - 1) * recordsPerPage + idx + 1}</td>
+                            <td className="px-3 py-2.5 text-ink">{item.processed.Title}</td>
+                            <td className="px-3 py-2.5 text-ink truncate">{item.processed['First Name']}</td>
+                            <td className="px-3 py-2.5 text-ink truncate">{item.processed['Last Name']}</td>
+                            <td className="px-3 py-2.5 text-ink truncate">{item.processed.Address || '\u2014'}</td>
+                            <td className="px-3 py-2.5 text-ink whitespace-nowrap">{item.processed.Postcode || '\u2014'}</td>
+                            <td className="px-3 py-2.5 text-ink">{item.processed['Donation Date'] || '\u2014'}</td>
+                            <td className="px-3 py-2.5 text-right text-ink">{money(Number(item.processed['Donation Amount'] || 0))}</td>
+                            <td className="px-3 py-2.5 text-center">{item.isValid ? <Pill tone="good">OK</Pill> : <Pill tone="warn">Review</Pill>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination
+                    page={previewPage}
+                    pageSize={recordsPerPage}
+                    total={eligibleItems.length}
+                    onPage={setPreviewPage}
+                    onPageSize={(n) => {
+                      setRecordsPerPage(n)
+                      setPreviewPage(1)
+                    }}
+                  />
+                </>
+              )}
             </div>
           </>
         )}
@@ -1527,7 +1516,7 @@ export default function DonationProcessor() {
           <div className="rounded-2xl border border-bad/20 bg-bad-soft p-5 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-bad flex-shrink-0" />
             <div>
-              <div className="font-semibold text-bad">Something went wrong</div>
+              <div className="font-medium text-bad">Something went wrong</div>
               <p className="text-sm text-bad/90">{error}</p>
             </div>
           </div>
@@ -1574,7 +1563,7 @@ export default function DonationProcessor() {
               <div className="rounded-2xl border border-bad/20 bg-bad-soft p-5 flex gap-3 text-sm text-bad">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold">Claims were not saved</div>
+                  <div className="font-medium">Claims were not saved</div>
                   Your files below are fine, but this upload will not appear in Claims or Search ({saveError}). Process the file again once the problem is fixed.
                 </div>
               </div>
@@ -1587,7 +1576,7 @@ export default function DonationProcessor() {
                     <h3 className="font-display text-xl font-semibold text-ink">Claims created</h3>
                     <span className="text-muted">all start as Pending</span>
                   </div>
-                  <Link href="/claims" className="font-semibold text-brand hover:underline">Open Claims &rarr;</Link>
+                  <Link href="/claims" className="font-medium text-brand hover:underline">Open Claims &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {saved.claims.map(c => (
@@ -1597,11 +1586,11 @@ export default function DonationProcessor() {
                       className="flex items-center justify-between rounded-xl border border-line px-5 py-4 hover:bg-wash transition-colors"
                     >
                       <div>
-                        <div className="font-bold text-ink">{c.ref}</div>
+                        <div className="text-ink">{c.ref}</div>
                         <div className="text-sm text-muted">{c.donationCount.toLocaleString()} donations</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-display text-xl font-bold text-ink">{money(c.totalAmount)}</div>
+                        <div className="text-ink">{money(c.totalAmount)}</div>
                         <div className="text-sm text-good">{money(c.totalAmount * 0.25)} Gift Aid</div>
                       </div>
                     </Link>
@@ -1611,7 +1600,7 @@ export default function DonationProcessor() {
                   <div className="mt-4 p-4 bg-warn-soft rounded-xl text-sm text-warn flex gap-3">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <div>
-                      <span className="font-semibold">
+                      <span className="font-medium">
                         {saved.duplicates.count.toLocaleString()} donation{saved.duplicates.count === 1 ? '' : 's'}
                       </span>{' '}
                       in this upload already appear in earlier claims ({saved.duplicates.claimRefs.join(', ')}). Check you are not claiming Gift Aid on them twice.
@@ -1629,7 +1618,7 @@ export default function DonationProcessor() {
               </div>
 
               <div>
-                <div className="font-semibold text-ink">HMRC schedules</div>
+                <div className="font-medium text-ink">HMRC schedules</div>
                 <p className="text-sm text-muted mb-3">The official HMRC template with your data from row 25. Up to 1,000 donations per file; the amount in each name is its total.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {downloadUrls.hmrcFiles.map((f, i) => (
@@ -1643,7 +1632,7 @@ export default function DonationProcessor() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="font-semibold text-ink">Review package</div>
+                  <div className="font-medium text-ink">Review package</div>
                   <p className="text-sm text-muted mb-3">cleaned_data.xlsx: correct data, rows to fix (with reasons), skipped rows and every auto-fix.</p>
                   {downloadUrls.cleanedData && (
                     <Button variant="outline" className="justify-start" onClick={() => downloadFile(downloadUrls.cleanedData!, 'cleaned_data.xlsx')}>
@@ -1652,7 +1641,7 @@ export default function DonationProcessor() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-ink">Simple output sheets</div>
+                  <div className="font-medium text-ink">Simple output sheets</div>
                   <p className="text-sm text-muted mb-3">Plain spreadsheets of the clean data, for backup or further work.</p>
                   <div className="flex flex-col gap-2">
                     {downloadUrls.outputFiles.map((f, i) => (

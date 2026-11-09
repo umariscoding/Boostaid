@@ -1,18 +1,14 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Loader2, SlidersHorizontal } from 'lucide-react'
 import { Card, PageHeader, inputClass, labelClass, th, td } from '@/components/ui/primitives'
+import { Pagination } from '@/components/ui/pagination'
 import { StatusBadge, apiJson, fmtDay, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
 
-interface Result {
+interface DonationRow {
   id: string
-  title: string
-  firstName: string
-  lastName: string
-  address: string
-  postcode: string
   donationDate: string | null
   amount: number
   claimId: string
@@ -23,53 +19,29 @@ interface Result {
   receivedAt: string | null
 }
 
-interface DonorGroup {
+interface Donor {
   key: string
   name: string
   house: string
   postcode: string
-  donations: Result[]
+  donationCount: number
   total: number
   claims: { id: string; ref: string; status: Status }[]
-}
-
-/** One row per donor (same name + postcode), with every donation and the claims it appears in. */
-function groupByDonor(results: Result[]): DonorGroup[] {
-  const map = new Map<string, DonorGroup>()
-  for (const r of results) {
-    const key = `${r.firstName}|${r.lastName}|${r.postcode.replace(/\s+/g, '')}`.toLowerCase()
-    let g = map.get(key)
-    if (!g) {
-      g = {
-        key,
-        name: [r.title, r.firstName, r.lastName].filter(Boolean).join(' '),
-        house: r.address,
-        postcode: r.postcode,
-        donations: [],
-        total: 0,
-        claims: [],
-      }
-      map.set(key, g)
-    }
-    g.donations.push(r)
-    g.total += r.amount
-    if (!g.claims.some((c) => c.id === r.claimId)) g.claims.push({ id: r.claimId, ref: r.claimRef, status: r.status })
-  }
-  return [...map.values()]
+  donations: DonationRow[]
 }
 
 export default function DonorsPage() {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState({ from: '', to: '', amount: '' })
   const [showFilters, setShowFilters] = useState(false)
-  const [results, setResults] = useState<Result[] | null>(null)
-  const [totalDonors, setTotalDonors] = useState(0)
-  const [truncated, setTruncated] = useState(false)
+  const [donors, setDonors] = useState<Donor[] | null>(null)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   const requestId = useRef(0)
-  const groups = useMemo(() => (results ? groupByDonor(results) : []), [results])
 
   // Search as you type. Anything with a digit is treated as a postcode, otherwise a name.
   useEffect(() => {
@@ -79,16 +51,17 @@ export default function DonorsPage() {
     if (filters.from) params.set('from', filters.from)
     if (filters.to) params.set('to', filters.to)
     if (filters.amount) params.set('amount', filters.amount)
+    params.set('page', String(page))
+    params.set('pageSize', String(pageSize))
 
     const id = ++requestId.current
     const timer = setTimeout(async () => {
       setLoading(true)
       try {
-        const data = await apiJson<{ results: Result[]; truncated: boolean; totalDonors: number }>(`/api/donors?${params}`)
+        const data = await apiJson<{ donors: Donor[]; total: number }>(`/api/donors?${params}`)
         if (id !== requestId.current) return
-        setResults(data.results)
-        setTruncated(data.truncated)
-        setTotalDonors(data.totalDonors)
+        setDonors(data.donors)
+        setTotal(data.total)
         setOpen(null)
         setError(null)
       } catch (err) {
@@ -98,7 +71,7 @@ export default function DonorsPage() {
       }
     }, 250)
     return () => clearTimeout(timer)
-  }, [query, filters])
+  }, [query, filters, page, pageSize])
 
   const filtered = !!(query.trim() || filters.from || filters.to || filters.amount)
 
@@ -115,11 +88,14 @@ export default function DonorsPage() {
             className="w-full h-16 px-6 rounded-full bg-white border border-line text-ink text-lg placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50"
             placeholder="e.g. Sample or E1 2AB"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setPage(1)
+            }}
           />
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className={`h-16 px-6 rounded-full border text-sm font-semibold inline-flex items-center gap-2 cursor-pointer ${
+            className={`h-16 px-6 rounded-full border text-sm font-medium inline-flex items-center gap-2 cursor-pointer ${
               showFilters ? 'bg-brand-soft border-brand/30 text-brand' : 'bg-white border-line text-ink hover:bg-wash'
             }`}
           >
@@ -131,15 +107,15 @@ export default function DonorsPage() {
           <Card className="mt-3 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelClass} htmlFor="from">Donated from</label>
-              <input id="from" type="date" className={inputClass} value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+              <input id="from" type="date" className={inputClass} value={filters.from} onChange={(e) => { setFilters({ ...filters, from: e.target.value }); setPage(1) }} />
             </div>
             <div>
               <label className={labelClass} htmlFor="to">Donated to</label>
-              <input id="to" type="date" className={inputClass} value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+              <input id="to" type="date" className={inputClass} value={filters.to} onChange={(e) => { setFilters({ ...filters, to: e.target.value }); setPage(1) }} />
             </div>
             <div>
               <label className={labelClass} htmlFor="amt">Amount (£)</label>
-              <input id="amt" type="number" step="0.01" min="0" className={inputClass} value={filters.amount} onChange={(e) => setFilters({ ...filters, amount: e.target.value })} placeholder="10.00" />
+              <input id="amt" type="number" step="0.01" min="0" className={inputClass} value={filters.amount} onChange={(e) => { setFilters({ ...filters, amount: e.target.value }); setPage(1) }} placeholder="10.00" />
             </div>
           </Card>
         )}
@@ -148,11 +124,11 @@ export default function DonorsPage() {
       {error && <div className="mt-6 rounded-xl border border-bad/20 bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
 
       <Card className="mt-8 overflow-hidden">
-        {results === null ? (
+        {donors === null ? (
           <div className="flex items-center justify-center gap-3 py-16 text-muted">
             <Loader2 className="w-5 h-5 animate-spin" /> Loading donors...
           </div>
-        ) : groups.length === 0 ? (
+        ) : donors.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="font-display text-xl font-semibold text-ink">
               {filtered ? 'No claimed donations match' : 'No donors yet'}
@@ -178,7 +154,7 @@ export default function DonorsPage() {
                 </tr>
               </thead>
               <tbody>
-                {groups.map((g) => {
+                {donors.map((g) => {
                   const isOpen = open === g.key
                   return (
                     <Fragment key={g.key}>
@@ -189,11 +165,11 @@ export default function DonorsPage() {
                         <td className="pl-5 py-4 text-muted">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         </td>
-                        <td className={`${td} font-bold text-ink`}>{g.name}</td>
+                        <td className={`${td} text-ink`}>{g.name}</td>
                         <td className={`${td} text-ink`}>{g.house}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>{g.postcode}</td>
-                        <td className={`${td} text-right text-ink`}>{g.donations.length}</td>
-                        <td className={`${td} text-right font-bold text-ink whitespace-nowrap`}>{gbp(g.total)}</td>
+                        <td className={`${td} text-right text-ink`}>{g.donationCount}</td>
+                        <td className={`${td} text-right text-ink whitespace-nowrap`}>{gbp(g.total)}</td>
                         <td className={td}>
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
                             {g.claims.map((c) => (
@@ -231,7 +207,7 @@ export default function DonorsPage() {
                                     <td className="py-2 text-ink whitespace-nowrap">{fmtPlainDate(d.donationDate)}</td>
                                     <td className="py-2 text-right text-ink">{gbp(d.amount)}</td>
                                     <td className="py-2 pl-8">
-                                      <Link href={`/claims/${d.claimId}`} className="font-semibold text-ink hover:text-brand">{d.claimRef}</Link>
+                                      <Link href={`/claims/${d.claimId}`} className="text-ink hover:text-brand">{d.claimRef}</Link>
                                       {d.hmrcRef && <span className="ml-2 text-muted">HMRC: {d.hmrcRef}</span>}
                                     </td>
                                     <td className="py-2"><StatusBadge status={d.status} /></td>
@@ -251,13 +227,24 @@ export default function DonorsPage() {
             </table>
           </div>
         )}
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPage={setPage}
+          onPageSize={(n) => {
+            setPageSize(n)
+            setPage(1)
+          }}
+          sizes={[10, 25, 50]}
+        />
       </Card>
 
-      {results && groups.length > 0 && (
+      {donors && donors.length > 0 && (
         <p className="mt-4 text-muted">
-          {groups.length.toLocaleString()} of {totalDonors.toLocaleString()} donor{totalDonors === 1 ? '' : 's'} shown
-          {truncated && ' · narrow your search to see the rest'}
-          {loading && ' · updating...'}
+          {total.toLocaleString()} donor{total === 1 ? '' : 's'}
+          {filtered ? ' match' : ' in total'}
+          {loading && ' \u00b7 updating...'}
         </p>
       )}
     </>

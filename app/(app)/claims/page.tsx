@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, PageHeader, th, td } from '@/components/ui/primitives'
+import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
 import type { ClaimDto } from '@/lib/claims'
 import {
@@ -32,11 +33,20 @@ export default function ClaimsPage() {
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [total, setTotal] = useState(0)
 
-  const load = useCallback(async (v: View) => {
+  const load = useCallback(async (v: View, p: number, size: number) => {
     try {
-      const data = await apiJson<{ claims: ClaimDto[] }>(`/api/claims?view=${v}`)
+      const data = await apiJson<{ claims: ClaimDto[]; total: number }>(`/api/claims?view=${v}&page=${p}&pageSize=${size}`)
+      // The last claim on this page may have just moved to another tab: step back a page
+      if (data.claims.length === 0 && p > 1) {
+        setPage(p - 1)
+        return
+      }
       setClaims(data.claims)
+      setTotal(data.total)
       setError(null)
     } catch (e) {
       setError((e as Error).message)
@@ -44,9 +54,14 @@ export default function ClaimsPage() {
   }, [])
 
   useEffect(() => {
+    load(view, page, pageSize)
+  }, [view, page, pageSize, load])
+
+  const changeView = (v: View) => {
     setClaims(null)
-    load(view)
-  }, [view, load])
+    setPage(1)
+    setView(v)
+  }
 
   const changeStatus = async (id: string, status: Status) => {
     setBusyId(id)
@@ -56,7 +71,7 @@ export default function ClaimsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      await load(view)
+      await load(view, page, pageSize)
       setTick((t) => t + 1)
     } catch (e) {
       setError((e as Error).message)
@@ -76,8 +91,8 @@ export default function ClaimsPage() {
           {TABS.map((t) => (
             <button
               key={t.id}
-              onClick={() => setView(t.id)}
-              className={`px-4 h-9 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              onClick={() => changeView(t.id)}
+              className={`px-4 h-9 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                 view === t.id ? 'bg-white text-ink shadow-sm border border-line' : 'text-muted hover:text-ink border border-transparent'
               }`}
             >
@@ -101,7 +116,7 @@ export default function ClaimsPage() {
           <div className="py-16 text-center text-muted">
             {view === 'archive' ? 'No received claims yet.' : 'No claims yet.'}{' '}
             {view !== 'archive' && (
-              <Link href="/" className="text-brand font-semibold hover:underline">
+              <Link href="/" className="text-brand font-medium hover:underline">
                 Clean a spreadsheet
               </Link>
             )}
@@ -133,7 +148,7 @@ export default function ClaimsPage() {
                           <StatusBadge status={c.status} />
                         </td>
                         <td className={td}>
-                          <Link href={`/claims/${c.id}`} className="font-semibold text-ink hover:text-brand whitespace-nowrap">
+                          <Link href={`/claims/${c.id}`} className="text-ink hover:text-brand whitespace-nowrap">
                             {c.ref}
                           </Link>
                           {c.hmrcRef && <div className="text-xs text-muted">HMRC: {c.hmrcRef}</div>}
@@ -141,7 +156,7 @@ export default function ClaimsPage() {
                         <td className={`${td} text-ink whitespace-nowrap`}>{fmtPeriod(c.periodFrom, c.periodTo)}</td>
                         <td className={`${td} text-right text-ink`}>{c.donationCount.toLocaleString()}</td>
                         <td className={`${td} text-right text-muted whitespace-nowrap`}>{gbp(c.totalAmount)}</td>
-                        <td className={`${td} text-right font-bold text-ink whitespace-nowrap`}>{gbp(c.giftAidAmount)}</td>
+                        <td className={`${td} text-right text-ink whitespace-nowrap`}>{gbp(c.giftAidAmount)}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>
                           {c.status === 'received' ? fmtDay(c.receivedAt) : '—'}
                           {c.status === 'submitted' && <div className="text-xs text-muted">sent {fmtDay(c.submittedAt)}</div>}
@@ -173,7 +188,7 @@ export default function ClaimsPage() {
                             )}
                             <Link
                               href={`/claims/${c.id}`}
-                              className="inline-flex h-9 items-center rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink hover:bg-wash"
+                              className="inline-flex h-9 items-center rounded-full border border-line bg-white px-4 text-sm font-medium text-ink hover:bg-wash"
                             >
                               Open
                             </Link>
@@ -187,6 +202,16 @@ export default function ClaimsPage() {
             </div>
           )
         )}
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPage={setPage}
+          onPageSize={(n) => {
+            setPageSize(n)
+            setPage(1)
+          }}
+        />
       </Card>
     </>
   )
