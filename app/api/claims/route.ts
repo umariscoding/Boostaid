@@ -7,6 +7,7 @@ import { toClaimDto } from '@/lib/claims'
 /** GET /api/claims?view=active|archive|all (active = pending + submitted, archive = received) */
 export const GET = withAuth(async (req) => {
   const view = req.nextUrl.searchParams.get('view') ?? 'active'
+  const summaryOnly = req.nextUrl.searchParams.get('summary') === '1'
   const db = getDb()
 
   const where =
@@ -15,14 +16,6 @@ export const GET = withAuth(async (req) => {
       : view === 'active'
         ? inArray(claims.status, ['pending', 'submitted'])
         : undefined
-
-  const rows = await db
-    .select({ claim: claims, filename: batches.filename })
-    .from(claims)
-    .innerJoin(batches, eq(batches.id, claims.batchId))
-    .where(where)
-    .orderBy(desc(claims.createdAt), desc(claims.chunkIndex))
-    .limit(1000)
 
   const totals = await db
     .select({
@@ -35,6 +28,16 @@ export const GET = withAuth(async (req) => {
 
   const summary = { pending: { count: 0, amount: 0 }, submitted: { count: 0, amount: 0 }, received: { count: 0, amount: 0 } }
   for (const t of totals) summary[t.status] = { count: t.count, amount: Number(t.amount) }
+
+  if (summaryOnly) return NextResponse.json({ summary })
+
+  const rows = await db
+    .select({ claim: claims, filename: batches.filename })
+    .from(claims)
+    .innerJoin(batches, eq(batches.id, claims.batchId))
+    .where(where)
+    .orderBy(desc(claims.createdAt), desc(claims.chunkIndex))
+    .limit(1000)
 
   return NextResponse.json({
     claims: rows.map((r) => toClaimDto(r.claim, r.filename)),

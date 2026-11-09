@@ -4,11 +4,21 @@ Cleans donation spreadsheets for HMRC Gift Aid, then tracks every claim from **p
 lets you look up any donor, and exports an audit file.
 
 ## Features
-- **Process** - upload a spreadsheet, map columns, get cleaned data + HMRC submission files. Garbled characters
-  (`â€™`, `ðŸ˜‡`) are repaired and emoji/symbols stripped on upload.
+- **Process** - upload a spreadsheet (.xlsx, .xls or .csv), map columns, get cleaned data + HMRC submission files.
+  - Address is reduced to the HMRC "house name or number" (max 40 chars): `7 Wordsworth Rd` -> `7`,
+    `302 hadding lodge, 9 knapp road` -> `302 Hadding Lodge`, `Flat 2, 25 Waylen Street` -> `Flat 2`.
+    A bare number is valid; no number or house name (`Shelley Ave`) goes to review.
+  - Text is cleaned on upload: garbled characters repaired (`a-euro-tm`, emoji mojibake), emoji removed, accents
+    converted to plain letters (`Erdogan` with a breve -> `Erdogan`), curly apostrophes straightened, hyphens and
+    apostrophes kept, fields trimmed. Non-Latin scripts (e.g. Arabic) can't be converted and go to review.
+  - CSV files are read as UTF-8 (falling back to Windows-1252 if the file isn't valid UTF-8).
+  - Output files are named with the schedule number, the total donations and the claim reference, e.g.
+    `Gift Aid Schedule 1 - £25,000 - GA-2026-0001.xlsx`.
+- **Dashboard** - pending / submitted / received claim counts and totals on the main page.
 - **Claims** - each HMRC file becomes a claim with its own reference (`GA-2026-0001`). Mark it submitted, then
   received; received claims move to the Archive tab. Full status history is kept.
-- **Donor search** - search by name, postcode, date range or amount to see if/when a donation was claimed.
+- **Donor search** - search by name, postcode, date range or amount. One row per donor with donation count, total
+  given and the claims their money is in; expand a row for each donation, its claim status and dates.
 - **Audit export** - download all claims (or a single claim) as an Excel file with Claims, Donations and Status History sheets.
 
 ## Setup

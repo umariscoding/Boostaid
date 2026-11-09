@@ -11,6 +11,9 @@ import ColumnMapper from './column-mapper'
 import AppHeader from './app-header'
 import Link from 'next/link'
 import { sanitizeRecords } from '@/lib/sanitize'
+import { extractHouse } from '@/lib/address'
+import { readWorkbook } from '@/lib/read-workbook'
+import SummaryStrip from './claims/summary-strip'
 
 interface DonationRecord {
   [key: string]: any
@@ -287,13 +290,6 @@ export default function DonationProcessor() {
     return false
   }
 
-  const needsColoringAddress = (addr: any): boolean => {
-    if (!addr) return true
-    const addrStr = String(addr).trim()
-    if (addrStr === '' || addrStr.match(/^\d+$/)) return true
-    return false
-  }
-
   const removePostcodeFromAddress = (address: any, postcode: any): string => {
     if (!address) return ''
     let addrStr = String(address).trim()
@@ -491,6 +487,12 @@ export default function DonationProcessor() {
     // Track changes made to this specific record
     const changesApplied: string[] = []
 
+    // HMRC wants only the house name/number: drop the postcode, then keep just the first part
+    const originalAddress = String(updated['Gift Aid Address 1'] || '')
+    const postcode = String(record['Gift Aid Postal Code'] || '')
+    const cleanedAddress = removePostcodeFromAddress(originalAddress, postcode)
+    const house = extractHouse(cleanedAddress)
+
     // Track analytics and changes
     if (analytics) {
       // Track title changes - only if we actually found/fixed a title
@@ -560,9 +562,9 @@ export default function DonationProcessor() {
         changesApplied.push('Date')
       }
 
-      // Track address shortening (if it was too long)
+      // Track address shortening (street/area removed so only the house name or number is sent)
       const address = String(originalRecord['Gift Aid Address 1'] || '').trim()
-      if (address && address.length > 50) {
+      if (address && house.value && house.value !== address) {
         analytics.addressesShortened++
         analytics.totalCellsModified++
         changesApplied.push('Address')
@@ -572,16 +574,18 @@ export default function DonationProcessor() {
     const finalFirstName = String(updated['First Name'] || '').trim()
     const finalLastName = String(updated['Last Name'] || '').trim()
 
-    // Remove postcode from address
-    const originalAddress = String(updated['Gift Aid Address 1'] || '')
-    const postcode = String(record['Gift Aid Postal Code'] || '')
-    const cleanedAddress = removePostcodeFromAddress(originalAddress, postcode)
-    const addressHasDuplicateWords = hasDuplicateWords(cleanedAddress)
+    // A bare number is a valid house number; no number or house name at all goes to review
+    const addressHasDuplicateWords = house.value ? hasDuplicateWords(house.value) : false
+
+    // Accents are converted to plain letters on upload, so anything outside printable ASCII left over
+    // (e.g. Arabic or Cyrillic script) can't be sent to HMRC as-is and needs a person to transliterate it
+    const hasUnconvertibleChars = [finalFirstName, finalLastName, house.value ?? cleanedAddress].some(v => /[^ -~]/.test(v))
 
     const needsReview =
       needsColoringPostcode(record['Gift Aid Postal Code']) ||
-      needsColoringAddress(record['Gift Aid Address 1']) ||
+      house.value === null ||
       addressHasDuplicateWords ||
+      hasUnconvertibleChars ||
       !record['Last Donation Date'] ||
       !finalFirstName ||
       !finalLastName
@@ -590,7 +594,7 @@ export default function DonationProcessor() {
       'Title': title,
       'First Name': String(updated['First Name'] || ''),
       'Last Name': String(updated['Last Name'] || ''),
-      'Address': cleanedAddress,
+      'Address': house.value ?? cleanedAddress,
       'Postcode': needsReview ? String(record['Gift Aid Postal Code'] || '') : formatPostcode(record['Gift Aid Postal Code']),
       'Donation Date': formatDate(record['Last Donation Date']),
       'Donation Amount': Number(record['Total Donation Amount']) || 0,
@@ -618,8 +622,7 @@ export default function DonationProcessor() {
       setLoading(true)
 
       try {
-        const data = await selectedFile.arrayBuffer()
-        const workbook = XLSX.read(data, { type: 'array', sheetRows: 0 })
+        const workbook = await readWorkbook(selectedFile)
 
         let allRecords: any[] = []
         const sheetNames = workbook.SheetNames
@@ -943,6 +946,19 @@ export default function DonationProcessor() {
       // Load the HMRC template and populate it with data using ExcelJS for perfect formatting preservation
       const hmrcUrls: { name: string; url: string }[] = []
 
+      // File names carry the schedule number, the total donations (the template's "Total donations" box) and the claim ref
+      const chunkTotal = (chunk: { 'Donation Amount'?: unknown }[]) =>
+        Math.round(chunk.reduce((sum: number, r) => sum + (Number(r['Donation Amount']) || 0), 0) * 100) / 100
+      const fileName = (kind: string, index: number, chunk: { 'Donation Amount'?: unknown }[]) => {
+        const total = chunkTotal(chunk)
+        const amount = '£' + total.toLocaleString('en-GB', {
+          minimumFractionDigits: Number.isInteger(total) ? 0 : 2,
+          maximumFractionDigits: 2
+        })
+        const ref = claimRefs[index] ? ` - ${claimRefs[index]}` : ''
+        return `${kind} ${index + 1} - ${amount}${ref}.xlsx`
+      }
+
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
         const chunk = chunks[chunkIndex]
 
@@ -992,7 +1008,7 @@ export default function DonationProcessor() {
         const url = window.URL.createObjectURL(blob)
 
         hmrcUrls.push({
-          name: `HMRC_submission_${claimRefs[chunkIndex] ?? chunkIndex + 1}.xlsx`,
+          name: fileName('Gift Aid Schedule', chunkIndex, chunk),
           url: url
         })
 
@@ -1013,7 +1029,7 @@ export default function DonationProcessor() {
         const url = window.URL.createObjectURL(blob)
 
         outputUrls.push({
-          name: `output_sheet_${claimRefs[index] ?? index + 1}.xlsx`,
+          name: fileName('Output Sheet', index, chunk),
           url: url
         })
       })
@@ -1220,6 +1236,8 @@ export default function DonationProcessor() {
       <AppHeader />
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
+
         {/* Upload Section */}
         {!preview && (
           <>
@@ -1241,10 +1259,10 @@ export default function DonationProcessor() {
                       <FileUp className="w-8 h-8 text-slate-400 group-hover:text-purple-400 transition-colors" />
                     </div>
                     <div className="text-slate-300 font-medium mb-1">Drop your file here or click to browse</div>
-                    <div className="text-sm text-slate-500">Supports Excel files (.xlsx, .xls)</div>
+                    <div className="text-sm text-slate-500">Supports Excel and CSV files (.xlsx, .xls, .csv)</div>
                     <Input
                       type="file"
-                      accept=".xlsx,.xls"
+                      accept=".xlsx,.xls,.csv"
                       onChange={handleFileChange}
                       className="hidden"
                       disabled={loading}

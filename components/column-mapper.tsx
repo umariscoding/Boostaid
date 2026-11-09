@@ -59,6 +59,8 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
       if (allowMultiple && key === 'Address') {
         const matches = detectedColumns.filter(col => {
           const colLower = col.toLowerCase().replace(/[^a-z0-9]/g, '')
+          // "Email Address" is not a postal address
+          if (colLower.includes('email')) return false
           return possiblePatterns.some(pattern => colLower.includes(pattern))
         })
         if (matches.length > 0) {

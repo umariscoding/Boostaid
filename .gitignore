@@ -7,3 +7,8 @@
 # misc
 .DS_Store
 *.tsbuildinfo
+
+# Donor spreadsheets must never be committed (public repo); the HMRC template lives in public/
+/*.xlsx
+/*.xls
+/*.csv

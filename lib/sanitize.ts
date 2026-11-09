@@ -4,7 +4,8 @@
  * 1. Repairs mojibake: UTF-8 text that was wrongly decoded as Windows-1252, e.g.
  *    "â€™" -> "’" and "ðŸ˜‡" -> "😇".
  * 2. Strips emoji / pictographs and other invisible or control characters.
- * 3. Normalises smart quotes, dashes and non-breaking spaces to plain ASCII.
+ * 3. Converts accented letters to plain letters (Erdogan with a dotless g -> Erdogan, Zoe with a diaeresis -> Zoe).
+ * 4. Normalises smart quotes, dashes and non-breaking spaces to plain ASCII. Hyphens and apostrophes are kept.
  */
 
 // Windows-1252 bytes 0x80-0x9F and the characters they decode to.
@@ -62,9 +63,28 @@ const DASHES_RE = new RegExp('[\\u2010-\\u2015\\u2212]', 'g')
 const ELLIPSIS_RE = new RegExp('\\u2026', 'g')
 const SPACES_RE = new RegExp('[\\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000]', 'g')
 
+// Letters that don't decompose into base letter + accent, so Unicode normalisation can't flatten them
+const SPECIAL_LETTERS: [number, string][] = [
+  [0x00df, 'ss'], [0x00e6, 'ae'], [0x00c6, 'AE'], [0x0153, 'oe'], [0x0152, 'OE'],
+  [0x00f8, 'o'], [0x00d8, 'O'], [0x0111, 'd'], [0x0110, 'D'], [0x00f0, 'd'], [0x00d0, 'D'],
+  [0x0142, 'l'], [0x0141, 'L'], [0x0131, 'i'], [0x0130, 'I'], [0x00fe, 'th'], [0x00de, 'Th'],
+  [0x0127, 'h'], [0x0126, 'H'],
+]
+const SPECIAL_MAP = new Map(SPECIAL_LETTERS.map(([code, rep]) => [String.fromCharCode(code), rep]))
+const SPECIAL_RE = new RegExp('[' + SPECIAL_LETTERS.map(([code]) => String.fromCharCode(code)).join('') + ']', 'g')
+
+/** "Zoe" with a diaeresis -> "Zoe", "Erdogan" with a breve -> "Erdogan". Letters outside Latin (Arabic, Cyrillic...) are untouched. */
+export function foldAccents(input: string): string {
+  return input
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .replace(SPECIAL_RE, (c) => SPECIAL_MAP.get(c) ?? c)
+    .normalize('NFC')
+}
+
 export function sanitizeText(input: string): string {
   let s = repairMojibake(input)
-  s = s.replace(EMOJI_RE, '').replace(INVISIBLE_RE, '')
+  s = foldAccents(s.replace(EMOJI_RE, '').replace(INVISIBLE_RE, ''))
   s = s
     .replace(SINGLE_QUOTES_RE, "'")
     .replace(DOUBLE_QUOTES_RE, '"')
