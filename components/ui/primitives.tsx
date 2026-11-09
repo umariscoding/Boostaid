@@ -7,7 +7,11 @@ export const inputClass =
   'w-full h-11 px-4 rounded-xl bg-white border border-line text-ink placeholder:text-muted/70 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50'
 export const labelClass = 'block text-sm font-medium text-ink mb-1.5'
 export const th = 'px-5 py-3.5 text-left text-sm font-medium text-muted whitespace-nowrap'
-export const td = 'px-5 py-4'
+/** Right-aligned header for number columns. */
+export const thr = 'px-5 py-3.5 text-right text-sm font-medium text-muted whitespace-nowrap'
+export const td = 'px-5 py-4 align-middle'
+/** Right-aligned, fixed-width digits so amounts line up down the column. */
+export const tdr = 'px-5 py-4 align-middle text-right tabular-nums whitespace-nowrap'
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return <div className={cn(card, className)}>{children}</div>

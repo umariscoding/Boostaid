@@ -1435,7 +1435,7 @@ export default function DonationProcessor() {
                             </td>
                             <td className="px-5 py-4 text-ink max-w-[220px] truncate">{item.processed.Address || '—'}</td>
                             <td className="px-5 py-4 text-ink whitespace-nowrap">{item.processed.Postcode || '—'}</td>
-                            <td className="px-5 py-4 text-right text-ink whitespace-nowrap">{money(Number(item.processed['Donation Amount'] || 0))}</td>
+                            <td className="px-5 py-4 text-right tabular-nums text-ink whitespace-nowrap">{money(Number(item.processed['Donation Amount'] || 0))}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1488,7 +1488,7 @@ export default function DonationProcessor() {
                             <td className="px-3 py-2.5 text-ink truncate">{item.processed.Address || '\u2014'}</td>
                             <td className="px-3 py-2.5 text-ink whitespace-nowrap">{item.processed.Postcode || '\u2014'}</td>
                             <td className="px-3 py-2.5 text-ink">{item.processed['Donation Date'] || '\u2014'}</td>
-                            <td className="px-3 py-2.5 text-right text-ink">{money(Number(item.processed['Donation Amount'] || 0))}</td>
+                            <td className="px-3 py-2.5 text-right tabular-nums text-ink">{money(Number(item.processed['Donation Amount'] || 0))}</td>
                             <td className="px-3 py-2.5 text-center">{item.isValid ? <Pill tone="good">OK</Pill> : <Pill tone="warn">Review</Pill>}</td>
                           </tr>
                         ))}
@@ -1704,7 +1704,7 @@ export default function DonationProcessor() {
                         <td className="px-4 py-3 text-muted italic">empty</td>
                         <td className="px-4 py-3 text-muted italic">empty</td>
                         <td className="px-4 py-3 text-ink">{item.processed?.['Donation Date'] || ''}</td>
-                        <td className="px-4 py-3 text-right text-ink">{money(Number(item.processed?.['Donation Amount'] || 0))}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-ink">{money(Number(item.processed?.['Donation Amount'] || 0))}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, PageHeader, th, td } from '@/components/ui/primitives'
+import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
 import type { ClaimDto } from '@/lib/claims'
@@ -130,9 +130,9 @@ export default function ClaimsPage() {
                     <th className={th}>Status</th>
                     <th className={th}>Claim</th>
                     <th className={th}>Period</th>
-                    <th className={`${th} text-right`}>Donations</th>
-                    <th className={`${th} text-right`}>Donated</th>
-                    <th className={`${th} text-right whitespace-nowrap`}>Gift Aid (25%)</th>
+                    <th className={thr}>Donations</th>
+                    <th className={thr}>Donated</th>
+                    <th className={thr}>Gift Aid (25%)</th>
                     <th className={th}>Received</th>
                     <th className={th} />
                   </tr>
@@ -154,9 +154,9 @@ export default function ClaimsPage() {
                           {c.hmrcRef && <div className="text-xs text-muted">HMRC: {c.hmrcRef}</div>}
                         </td>
                         <td className={`${td} text-ink whitespace-nowrap`}>{fmtPeriod(c.periodFrom, c.periodTo)}</td>
-                        <td className={`${td} text-right text-ink`}>{c.donationCount.toLocaleString()}</td>
-                        <td className={`${td} text-right text-muted whitespace-nowrap`}>{gbp(c.totalAmount)}</td>
-                        <td className={`${td} text-right text-ink whitespace-nowrap`}>{gbp(c.giftAidAmount)}</td>
+                        <td className={`${tdr} text-ink`}>{c.donationCount.toLocaleString()}</td>
+                        <td className={`${tdr} text-muted`}>{gbp(c.totalAmount)}</td>
+                        <td className={`${tdr} text-ink`}>{gbp(c.giftAidAmount)}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>
                           {c.status === 'received' ? fmtDay(c.receivedAt) : '—'}
                           {c.status === 'submitted' && <div className="text-xs text-muted">sent {fmtDay(c.submittedAt)}</div>}

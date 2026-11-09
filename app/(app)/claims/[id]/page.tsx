@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Download, Loader2, Trash2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, inputClass, labelClass, th, td } from '@/components/ui/primitives'
+import { Card, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import type { ClaimDto } from '@/lib/claims'
 import {
@@ -223,7 +223,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                     <th className={th}>House</th>
                     <th className={th}>Postcode</th>
                     <th className={th}>Date</th>
-                    <th className={`${th} text-right`}>Amount</th>
+                    <th className={thr}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -233,7 +233,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                       <td className={`${td} py-3 text-ink`}>{d.address}</td>
                       <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
                       <td className={`${td} py-3 text-ink whitespace-nowrap`}>{fmtPlainDate(d.donationDate)}</td>
-                      <td className={`${td} py-3 text-right text-ink`}>{gbp(d.amount)}</td>
+                      <td className={`${tdr} py-3 text-ink`}>{gbp(d.amount)}</td>
                     </tr>
                   ))}
                   {shown.length === 0 && (

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Loader2, SlidersHorizontal } from 'lucide-react'
-import { Card, PageHeader, inputClass, labelClass, th, td } from '@/components/ui/primitives'
+import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import { StatusBadge, apiJson, fmtDay, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
 
@@ -29,6 +29,8 @@ interface Donor {
   claims: { id: string; ref: string; status: Status }[]
   donations: DonationRow[]
 }
+
+const MAX_CLAIM_CHIPS = 3
 
 export default function DonorsPage() {
   const [query, setQuery] = useState('')
@@ -141,82 +143,103 @@ export default function DonorsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[15px]">
+            <table className="w-full min-w-[1000px] table-fixed text-[15px]">
+              <colgroup>
+                <col className="w-12" />
+                <col className="w-[20%]" />
+                <col className="w-[16%]" />
+                <col className="w-[10%]" />
+                <col className="w-[11%]" />
+                <col className="w-[11%]" />
+                <col />
+              </colgroup>
               <thead>
                 <tr className="border-b border-line">
-                  <th className="px-4 py-3.5 w-8" />
+                  <th className="py-3.5" />
                   <th className={th}>Donor</th>
                   <th className={th}>House</th>
                   <th className={th}>Postcode</th>
-                  <th className={`${th} text-right`}>Donations</th>
-                  <th className={`${th} text-right`}>Total given</th>
+                  <th className={thr}>Donations</th>
+                  <th className={thr}>Total given</th>
                   <th className={th}>In claims</th>
                 </tr>
               </thead>
               <tbody>
                 {donors.map((g) => {
                   const isOpen = open === g.key
+                  const shownClaims = g.claims.slice(0, MAX_CLAIM_CHIPS)
+                  const moreClaims = g.claims.length - shownClaims.length
                   return (
                     <Fragment key={g.key}>
                       <tr
-                        className="border-b border-line hover:bg-wash/60 cursor-pointer"
+                        className={`border-b border-line hover:bg-wash/60 cursor-pointer ${isOpen ? 'bg-wash/60' : ''}`}
                         onClick={() => setOpen(isOpen ? null : g.key)}
                       >
-                        <td className="pl-5 py-4 text-muted">
+                        <td className="pl-5 py-4 align-middle text-muted">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         </td>
                         <td className={`${td} text-ink`}>{g.name}</td>
                         <td className={`${td} text-ink`}>{g.house}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>{g.postcode}</td>
-                        <td className={`${td} text-right text-ink`}>{g.donationCount}</td>
-                        <td className={`${td} text-right text-ink whitespace-nowrap`}>{gbp(g.total)}</td>
+                        <td className={`${tdr} text-ink`}>{g.donationCount}</td>
+                        <td className={`${tdr} text-ink`}>{gbp(g.total)}</td>
                         <td className={td}>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1">
-                            {g.claims.map((c) => (
+                          <div className="flex flex-col gap-1.5 items-start">
+                            {shownClaims.map((c) => (
                               <Link
                                 key={c.id}
                                 href={`/claims/${c.id}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-2 text-ink hover:text-brand"
+                                className="flex items-center gap-3 text-ink hover:text-brand"
                               >
-                                {c.ref}
+                                <span className="w-[7.5rem] tabular-nums">{c.ref}</span>
                                 <StatusBadge status={c.status} />
                               </Link>
                             ))}
+                            {moreClaims > 0 && <span className="text-sm text-muted">+{moreClaims} more</span>}
                           </div>
                         </td>
                       </tr>
                       {isOpen && (
                         <tr className="bg-wash border-b border-line">
-                          <td />
-                          <td colSpan={6} className="px-5 py-4">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="text-left text-muted">
-                                  <th className="py-1.5 font-medium">Donated</th>
-                                  <th className="py-1.5 font-medium text-right">Amount</th>
-                                  <th className="py-1.5 pl-8 font-medium">Claim</th>
-                                  <th className="py-1.5 font-medium">Status</th>
-                                  <th className="py-1.5 font-medium">Submitted</th>
-                                  <th className="py-1.5 font-medium">Received</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {g.donations.map((d) => (
-                                  <tr key={d.id} className="border-t border-line">
-                                    <td className="py-2 text-ink whitespace-nowrap">{fmtPlainDate(d.donationDate)}</td>
-                                    <td className="py-2 text-right text-ink">{gbp(d.amount)}</td>
-                                    <td className="py-2 pl-8">
-                                      <Link href={`/claims/${d.claimId}`} className="text-ink hover:text-brand">{d.claimRef}</Link>
-                                      {d.hmrcRef && <span className="ml-2 text-muted">HMRC: {d.hmrcRef}</span>}
-                                    </td>
-                                    <td className="py-2"><StatusBadge status={d.status} /></td>
-                                    <td className="py-2 text-ink whitespace-nowrap">{fmtDay(d.submittedAt)}</td>
-                                    <td className="py-2 text-ink whitespace-nowrap">{fmtDay(d.receivedAt)}</td>
+                          <td colSpan={7} className="pb-5 pt-1 pr-5 pl-12">
+                            <div className="bg-white border border-line rounded-xl overflow-hidden">
+                              <table className="w-full table-fixed text-sm">
+                                <colgroup>
+                                  <col className="w-[16%]" />
+                                  <col className="w-[14%]" />
+                                  <col className="w-[24%]" />
+                                  <col className="w-[16%]" />
+                                  <col className="w-[15%]" />
+                                  <col className="w-[15%]" />
+                                </colgroup>
+                                <thead>
+                                  <tr className="border-b border-line">
+                                    <th className={th}>Donated</th>
+                                    <th className={thr}>Amount</th>
+                                    <th className={th}>Claim</th>
+                                    <th className={th}>Status</th>
+                                    <th className={th}>Submitted</th>
+                                    <th className={th}>Received</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                                </thead>
+                                <tbody>
+                                  {g.donations.map((d) => (
+                                    <tr key={d.id} className="border-b border-line last:border-0">
+                                      <td className="px-5 py-3 align-middle text-ink whitespace-nowrap">{fmtPlainDate(d.donationDate)}</td>
+                                      <td className="px-5 py-3 align-middle text-right tabular-nums text-ink">{gbp(d.amount)}</td>
+                                      <td className="px-5 py-3 align-middle">
+                                        <Link href={`/claims/${d.claimId}`} className="text-ink hover:text-brand tabular-nums">{d.claimRef}</Link>
+                                        {d.hmrcRef && <div className="text-xs text-muted">HMRC: {d.hmrcRef}</div>}
+                                      </td>
+                                      <td className="px-5 py-3 align-middle"><StatusBadge status={d.status} /></td>
+                                      <td className="px-5 py-3 align-middle text-ink whitespace-nowrap">{fmtDay(d.submittedAt)}</td>
+                                      <td className="px-5 py-3 align-middle text-ink whitespace-nowrap">{fmtDay(d.receivedAt)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </td>
                         </tr>
                       )}
