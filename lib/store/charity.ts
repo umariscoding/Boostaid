@@ -19,7 +19,8 @@ interface CharityStore {
   loaded: boolean
   /** The sidebar selection: "all" or a charity id. Views (Claims, Search, tiles) follow it. */
   selectedId: string
-  /** Only used while "all" is selected and there are several charities: the one chosen for an upload. */
+  /** Only used while "all" is selected and there are several charities: the one chosen for an upload.
+   *  Cleared on every sidebar change and after each finished upload, so it is always chosen deliberately. */
   allModeTargetId: string
 
   init: () => Promise<void>
@@ -67,7 +68,8 @@ export const useCharityStore = create<CharityStore>((set, get) => ({
   },
 
   select: (id) => {
-    set({ selectedId: id })
+    // Switching charity always clears the "all charities" upload choice, so it must be made again
+    set({ selectedId: id, allModeTargetId: '' })
     try {
       localStorage.setItem(STORAGE_KEY, id)
     } catch {

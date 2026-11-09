@@ -785,6 +785,11 @@ export default function DonationProcessor() {
       setError('Please select a file')
       return
     }
+    // Every upload is attached to a charity (the server rejects one without)
+    if (!fileCharityId) {
+      setError('This upload has no charity attached. Choose a charity and upload the file again.')
+      return
+    }
 
     setProcessing(true)
     setError(null)
@@ -1117,6 +1122,9 @@ export default function DonationProcessor() {
   }
 
   const handleReset = () => {
+    // The next upload must pick its charity again (matters when viewing all charities)
+    chooseUploadTarget('')
+    setFileCharityId('')
     // Clean up blob URLs
     if (downloadUrls.cleanedData) {
       window.URL.revokeObjectURL(downloadUrls.cleanedData)
@@ -1313,6 +1321,9 @@ export default function DonationProcessor() {
 
   const noCharities = charitiesLoaded && charities.length === 0
   const canUpload = !!uploadTargetId && !loading && !processing
+  // "All charities" with several charities: nothing can be uploaded until one is chosen
+  const needsChoice = charitiesLoaded && charities.length > 1 && selectedId === 'all' && !uploadTargetId
+  const uploadTargetName = charities.find(c => c.id === uploadTargetId)?.name
   const fileCharity = charities.find(c => c.id === fileCharityId)
 
   const uploadButton = noCharities ? (
@@ -1352,11 +1363,32 @@ export default function DonationProcessor() {
               <>
             <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
 
+            {needsChoice ? (
+              <div className="bg-white border border-line rounded-2xl p-8">
+                <h2 className="font-display text-2xl font-semibold text-ink">Choose a charity first</h2>
+                <p className="text-muted mt-1">Every upload is attached to one charity. Which one is this file for?</p>
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {charities.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => chooseUploadTarget(c.id)}
+                      className="rounded-xl border border-line px-5 py-4 text-left hover:border-brand/50 hover:bg-brand-soft/40 transition-colors cursor-pointer"
+                    >
+                      <div className="text-ink">{c.name}</div>
+                      <div className="text-sm text-muted">{c.claimCount.toLocaleString()} claim{c.claimCount === 1 ? '' : 's'}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
             {selectedId !== 'all' || charities.length <= 1 ? (
               // A charity is already decided (picked in the sidebar, or the only one): no dropdown needed
-              <p className="text-ink">
-                Uploading for <span className="font-medium">{charities.find(c => c.id === uploadTargetId)?.name}</span>
-              </p>
+              uploadTargetName ? (
+                <p className="text-ink">
+                  Uploading for <span className="font-medium">{uploadTargetName}</span>
+                </p>
+              ) : null
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <label htmlFor="upload-charity" className="text-ink">Uploading for</label>
@@ -1367,12 +1399,8 @@ export default function DonationProcessor() {
                   disabled={!charitiesLoaded}
                   wrapperClassName="min-w-[16rem]"
                 >
-                  {!uploadTargetId && <option value="">Choose a charity...</option>}
                   {charities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </Select>
-                {!uploadTargetId && charitiesLoaded && (
-                  <span className="text-sm text-muted">Pick the charity this file belongs to, or select one in the sidebar.</span>
-                )}
               </div>
             )}
 
@@ -1388,7 +1416,10 @@ export default function DonationProcessor() {
             </label>
               </>
             )}
+              </>
+            )}
 
+            {!needsChoice && (
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 { icon: Columns, title: '1. Map columns', text: 'Match your spreadsheet columns to the fields HMRC needs.' },
@@ -1406,6 +1437,7 @@ export default function DonationProcessor() {
                 </div>
               ))}
             </div>
+            )}
           </>
         )}
 
