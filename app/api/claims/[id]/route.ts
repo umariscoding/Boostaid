@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { asc, eq, sql } from 'drizzle-orm'
-import { batches, claimEvents, claims, donations, getDb } from '@/lib/db'
+import { batches, charities, claimEvents, claims, donations, getDb } from '@/lib/db'
 import type { ClaimStatus } from '@/lib/db'
 import { UUID_RE, withAuth } from '@/lib/api'
 import { toClaimDto } from '@/lib/claims'
@@ -13,9 +13,10 @@ export const GET = withAuth<Params>(async (_req, { params }) => {
   const db = getDb()
 
   const [row] = await db
-    .select({ claim: claims, filename: batches.filename })
+    .select({ claim: claims, filename: batches.filename, charityId: charities.id, charityName: charities.name })
     .from(claims)
     .innerJoin(batches, eq(batches.id, claims.batchId))
+    .innerJoin(charities, eq(charities.id, batches.charityId))
     .where(eq(claims.id, id))
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -25,7 +26,7 @@ export const GET = withAuth<Params>(async (_req, { params }) => {
   ])
 
   return NextResponse.json({
-    claim: toClaimDto(row.claim, row.filename),
+    claim: toClaimDto(row.claim, row.filename, undefined, { id: row.charityId, name: row.charityName }),
     donations: rows.map((d) => ({
       id: d.id,
       title: d.title,

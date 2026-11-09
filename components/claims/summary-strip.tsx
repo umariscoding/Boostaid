@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { StatTile } from '@/components/ui/primitives'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useCharity } from '@/components/charity/charity-context'
 import { apiJson, gbp, type Status } from './shared'
 import { giftAidOn } from '@/lib/claims'
 
@@ -17,20 +18,25 @@ const TILES: { status: Status; label: string; hint: string; tone: 'warn' | 'info
 
 /** Claim counts and values by status. Quietly hides itself if the database isn't reachable. */
 export default function SummaryStrip({ refreshKey = 0, linked = true }: { refreshKey?: number; linked?: boolean }) {
-  const [summary, setSummary] = useState<Summary | null>(null)
+  const { loaded, charities, selectedId } = useCharity()
+  // Remember which charity the numbers belong to, so a switch shows placeholders instead of stale totals
+  const [data, setData] = useState<{ scope: string; summary: Summary } | null>(null)
   const [failed, setFailed] = useState(false)
+  const hasCharities = charities.length > 0
+  const summary = data && data.scope === selectedId ? data.summary : null
 
   useEffect(() => {
+    if (!loaded || !hasCharities) return
     let cancelled = false
-    apiJson<{ summary: Summary }>('/api/claims?summary=1')
-      .then((d) => !cancelled && setSummary(d.summary))
+    apiJson<{ summary: Summary }>(`/api/claims?summary=1&charity=${selectedId}`)
+      .then((d) => !cancelled && setData({ scope: selectedId, summary: d.summary }))
       .catch(() => !cancelled && setFailed(true))
     return () => {
       cancelled = true
     }
-  }, [refreshKey])
+  }, [refreshKey, loaded, hasCharities, selectedId])
 
-  if (failed) return null
+  if (failed || (loaded && !hasCharities)) return null
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

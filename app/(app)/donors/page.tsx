@@ -6,6 +6,8 @@ import { ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
+import NoCharityNotice from '@/components/charity/no-charity-notice'
+import { useCharity } from '@/components/charity/charity-context'
 import { StatusBadge, apiJson, fmtDay, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
 
 interface DonationRow {
@@ -22,6 +24,8 @@ interface DonationRow {
 
 interface Donor {
   key: string
+  charityId: string
+  charityName: string
   name: string
   house: string
   postcode: string
@@ -34,6 +38,8 @@ interface Donor {
 const MAX_CLAIM_CHIPS = 3
 
 export default function DonorsPage() {
+  const { loaded, charities, selected, selectedId } = useCharity()
+  const showCharity = selectedId === 'all'
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState({ from: '', to: '', amount: '' })
   const [showFilters, setShowFilters] = useState(false)
@@ -46,9 +52,22 @@ export default function DonorsPage() {
   const [open, setOpen] = useState<string | null>(null)
   const requestId = useRef(0)
 
+  const scopeRef = useRef(selectedId)
+
   // Search as you type. Anything with a digit is treated as a postcode, otherwise a name.
   useEffect(() => {
+    if (!loaded || charities.length === 0) return
+    // Switching charity starts again from page 1
+    if (scopeRef.current !== selectedId) {
+      scopeRef.current = selectedId
+      setDonors(null)
+      if (page !== 1) {
+        setPage(1)
+        return
+      }
+    }
     const params = new URLSearchParams()
+    params.set('charity', selectedId)
     const q = query.trim()
     if (q) params.set(/\d/.test(q) ? 'postcode' : 'q', q)
     if (filters.from) params.set('from', filters.from)
@@ -74,14 +93,21 @@ export default function DonorsPage() {
       }
     }, 250)
     return () => clearTimeout(timer)
-  }, [query, filters, page, pageSize])
+  }, [loaded, charities.length, selectedId, query, filters, page, pageSize])
 
   const filtered = !!(query.trim() || filters.from || filters.to || filters.amount)
 
   return (
     <>
-      <PageHeader title="Search donors" subtitle="Find out whether a donor's donation has been claimed, when, and in which claim." />
+      <PageHeader
+        title="Search donors"
+        subtitle={`Find out whether a donor's donation has been claimed, when, and in which claim. ${selected ? `Searching ${selected.name}.` : 'Searching all charities.'}`}
+      />
 
+      {loaded && charities.length === 0 ? (
+        <NoCharityNotice />
+      ) : (
+      <>
       <div className="max-w-3xl">
         <label className={labelClass} htmlFor="q">Find a donor by name or postcode</label>
         <div className="flex gap-3">
@@ -189,7 +215,10 @@ export default function DonorsPage() {
                         <td className="pl-5 py-4 align-middle text-muted">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         </td>
-                        <td className={`${td} text-ink`}>{g.name}</td>
+                        <td className={`${td} text-ink`}>
+                          {g.name}
+                          {showCharity && <div className="text-sm text-muted">{g.charityName}</div>}
+                        </td>
                         <td className={`${td} text-ink`}>{g.house}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>{g.postcode}</td>
                         <td className={`${tdr} text-ink`}>{g.donationCount}</td>
@@ -279,6 +308,8 @@ export default function DonorsPage() {
           {total.toLocaleString()} donor{total === 1 ? '' : 's'}
           {filtered ? ' match' : ' in total'}
         </p>
+      )}
+      </>
       )}
     </>
   )

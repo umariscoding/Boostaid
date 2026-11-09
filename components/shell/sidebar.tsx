@@ -2,13 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Gift, PieChart, Receipt, Search, Sparkles, type LucideIcon } from 'lucide-react'
+import { ChevronDown, Gift, PieChart, Plus, Receipt, Search, Settings, Sparkles, type LucideIcon } from 'lucide-react'
+import { useCharity } from '@/components/charity/charity-context'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/', label: 'Clean', icon: Sparkles },
   { href: '/donors', label: 'Search', icon: Search },
   { href: '/claims', label: 'Claims', icon: Receipt },
   { href: '/gasds', label: 'GASDS', icon: PieChart },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 /** UK tax year runs 6 April to 5 April. */
@@ -20,6 +23,42 @@ function taxYear(now = new Date()): string {
 async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' })
   window.location.href = '/login'
+}
+
+function CharityPicker() {
+  const { charities, loaded, selectedId, select } = useCharity()
+  return (
+    <div className="px-5 pb-3">
+      <div className="text-sm text-side-muted mb-1.5">Charity</div>
+      {!loaded ? (
+        <Skeleton className="h-11 w-full rounded-xl bg-side-active" />
+      ) : charities.length === 0 ? (
+        <Link
+          href="/settings"
+          className="flex h-11 items-center gap-2 rounded-xl border border-dashed border-side-muted/50 px-4 text-[15px] text-white hover:bg-side-active"
+        >
+          <Plus className="w-4 h-4" /> Add a charity
+        </Link>
+      ) : (
+        <div className="relative">
+          <select
+            aria-label="Charity"
+            value={selectedId}
+            onChange={(e) => select(e.target.value)}
+            className="h-11 w-full appearance-none truncate rounded-xl bg-side-active pl-4 pr-10 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#7c5cf0]/60 cursor-pointer"
+          >
+            <option value="all">All charities</option>
+            {charities.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-side-muted" />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Sidebar() {
@@ -38,7 +77,9 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="px-3 pb-3 md:pt-6 flex md:flex-col gap-1 overflow-x-auto">
+      <CharityPicker />
+
+      <nav className="px-3 pb-3 md:pt-3 flex md:flex-col gap-1 overflow-x-auto">
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}

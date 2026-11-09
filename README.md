@@ -4,6 +4,11 @@ Cleans donation spreadsheets for HMRC Gift Aid, then tracks every claim from **p
 lets you look up any donor, and exports an audit file.
 
 ## Features
+- **Charities** - add and remove charities under **Settings -> Manage charities**. The sidebar dropdown picks the
+  charity you're working in, or **All charities** to see everything together. Every upload, claim and donor belongs
+  to one charity; uploading with "All charities" selected asks you to choose which one. Duplicate-donation warnings
+  only compare within the same charity. Deleting a charity deletes all of its records (uploads, claims, donors and
+  status history) after a warning that shows how much will go. With no charities yet, every page prompts you to add one.
 - **Process** - upload a spreadsheet (.xlsx, .xls or .csv), map columns, get cleaned data + HMRC submission files.
   - Address is reduced to the HMRC "house name or number" (max 40 chars): `7 Wordsworth Rd` -> `7`,
     `302 hadding lodge, 9 knapp road` -> `302 Hadding Lodge`, `Flat 2, 25 Waylen Street` -> `Flat 2`.

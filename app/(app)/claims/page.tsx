@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Undo2 } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/skeleton'
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
+import NoCharityNotice from '@/components/charity/no-charity-notice'
+import { useCharity } from '@/components/charity/charity-context'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,
@@ -29,6 +31,8 @@ const TABS: { id: View; label: string }[] = [
 ]
 
 export default function ClaimsPage() {
+  const { loaded, charities, selected, selectedId } = useCharity()
+  const showCharity = selectedId === 'all'
   const [view, setView] = useState<View>('active')
   const [claims, setClaims] = useState<ClaimDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -39,10 +43,10 @@ export default function ClaimsPage() {
   const [total, setTotal] = useState(0)
   const [fetching, setFetching] = useState(false)
 
-  const load = useCallback(async (v: View, p: number, size: number) => {
+  const load = useCallback(async (v: View, p: number, size: number, charity: string) => {
     setFetching(true)
     try {
-      const data = await apiJson<{ claims: ClaimDto[]; total: number }>(`/api/claims?view=${v}&page=${p}&pageSize=${size}`)
+      const data = await apiJson<{ claims: ClaimDto[]; total: number }>(`/api/claims?view=${v}&page=${p}&pageSize=${size}&charity=${charity}`)
       // The last claim on this page may have just moved to another tab: step back a page
       if (data.claims.length === 0 && p > 1) {
         setPage(p - 1)
@@ -58,9 +62,20 @@ export default function ClaimsPage() {
     }
   }, [])
 
+  const scopeRef = useRef(selectedId)
   useEffect(() => {
-    load(view, page, pageSize)
-  }, [view, page, pageSize, load])
+    if (!loaded || charities.length === 0) return
+    // Switching charity starts again from page 1
+    if (scopeRef.current !== selectedId) {
+      scopeRef.current = selectedId
+      setClaims(null)
+      if (page !== 1) {
+        setPage(1)
+        return
+      }
+    }
+    load(view, page, pageSize, selectedId)
+  }, [loaded, charities.length, selectedId, view, page, pageSize, load])
 
   const changeView = (v: View) => {
     setClaims(null)
@@ -76,7 +91,7 @@ export default function ClaimsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      await load(view, page, pageSize)
+      await load(view, page, pageSize, selectedId)
       setTick((t) => t + 1)
     } catch (e) {
       setError((e as Error).message)
@@ -87,8 +102,15 @@ export default function ClaimsPage() {
 
   return (
     <>
-      <PageHeader title="Claims" subtitle="Track each HMRC submission from pending to received." />
+      <PageHeader
+        title="Claims"
+        subtitle={`Track each HMRC submission from pending to received. ${selected ? `Showing ${selected.name}.` : 'Showing all charities.'}`}
+      />
 
+      {loaded && charities.length === 0 ? (
+        <NoCharityNotice />
+      ) : (
+      <>
       <SummaryStrip refreshKey={tick} linked={false} />
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
@@ -105,7 +127,7 @@ export default function ClaimsPage() {
             </button>
           ))}
         </div>
-        <a href={`/api/export?view=${view}`}>
+        <a href={`/api/export?view=${view}&charity=${selectedId}`}>
           <Button variant="outline">Export list</Button>
         </a>
       </div>
@@ -118,6 +140,7 @@ export default function ClaimsPage() {
             columns={[
               { label: 'Status' },
               { label: 'Claim' },
+              ...(showCharity ? [{ label: 'Charity' }] : []),
               { label: 'Period' },
               { label: 'Donations', right: true },
               { label: 'Donated', right: true },
@@ -129,7 +152,8 @@ export default function ClaimsPage() {
           />
         ) : claims && claims.length === 0 ? (
           <div className="py-16 text-center text-muted">
-            {view === 'archive' ? 'No received claims yet.' : 'No claims yet.'}{' '}
+            {view === 'archive' ? 'No received claims yet' : 'No claims yet'}
+            {selected ? ` for ${selected.name}` : ''}.{' '}
             {view !== 'archive' && (
               <Link href="/" className="text-brand font-medium hover:underline">
                 Clean a spreadsheet
@@ -144,6 +168,7 @@ export default function ClaimsPage() {
                   <tr className="border-b border-line">
                     <th className={th}>Status</th>
                     <th className={th}>Claim</th>
+                    {showCharity && <th className={th}>Charity</th>}
                     <th className={th}>Period</th>
                     <th className={thr}>Donations</th>
                     <th className={thr}>Donated</th>
@@ -168,6 +193,7 @@ export default function ClaimsPage() {
                           </Link>
                           {c.hmrcRef && <div className="text-xs text-muted">HMRC: {c.hmrcRef}</div>}
                         </td>
+                        {showCharity && <td className={`${td} text-ink`}>{c.charityName}</td>}
                         <td className={`${td} text-ink whitespace-nowrap`}>{fmtPeriod(c.periodFrom, c.periodTo)}</td>
                         <td className={`${tdr} text-ink`}>{c.donationCount.toLocaleString()}</td>
                         <td className={`${tdr} text-muted`}>{gbp(c.totalAmount)}</td>
@@ -228,6 +254,8 @@ export default function ClaimsPage() {
           }}
         />
       </Card>
+      </>
+      )}
     </>
   )
 }

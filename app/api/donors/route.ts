@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { and, desc, eq, gte, inArray, lte, sql, type SQL } from 'drizzle-orm'
-import { claims, donations, getDb } from '@/lib/db'
+import { batches, charities, claims, donations, getDb } from '@/lib/db'
 import { withAuth } from '@/lib/api'
 import { escapeLike, normalisePostcode } from '@/lib/claims'
+import { parseCharityParam } from '@/lib/scope'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -21,6 +22,7 @@ export const GET = withAuth(async (req) => {
   const from = sp.get('from') ?? ''
   const to = sp.get('to') ?? ''
   const amount = sp.get('amount') ?? ''
+  const charityId = parseCharityParam(sp.get('charity'))
 
   if (from && !ISO_DATE.test(from)) throw new RangeError('Invalid "from" date')
   if (to && !ISO_DATE.test(to)) throw new RangeError('Invalid "to" date')
@@ -38,24 +40,29 @@ export const GET = withAuth(async (req) => {
   if (from) conditions.push(gte(donations.donationDate, from))
   if (to) conditions.push(lte(donations.donationDate, to))
   if (amount) conditions.push(eq(donations.amount, Number(amount).toFixed(2)))
+  if (charityId) conditions.push(eq(batches.charityId, charityId))
 
   const page = Math.max(1, Math.trunc(Number(sp.get('page'))) || 1)
   const pageSize = Math.min(100, Math.max(1, Math.trunc(Number(sp.get('pageSize'))) || 25))
 
   const db = getDb()
   const where = conditions.length ? and(...conditions) : undefined
-  // A donor is the same first name + last name + postcode
-  const donorKey = sql<string>`lower(${donations.firstName}) || '|' || lower(${donations.lastName}) || '|' || ${donations.postcodeNorm}`
+  // A donor is the same first name + last name + postcode, within one charity
+  const donorKey = sql<string>`${batches.charityId}::text || '|' || lower(${donations.firstName}) || '|' || lower(${donations.lastName}) || '|' || ${donations.postcodeNorm}`
 
   const [{ total }] = await db
     .select({ total: sql<number>`count(distinct ${donorKey})::int` })
     .from(donations)
+    .innerJoin(claims, eq(claims.id, donations.claimId))
+    .innerJoin(batches, eq(batches.id, claims.batchId))
     .where(where)
 
   // One page of donors, most recently donated first
   const pageDonors = await db
     .select({ key: donorKey })
     .from(donations)
+    .innerJoin(claims, eq(claims.id, donations.claimId))
+    .innerJoin(batches, eq(batches.id, claims.batchId))
     .where(where)
     .groupBy(donorKey)
     .orderBy(sql`max(${donations.donationDate}) desc nulls last`, donorKey)
@@ -82,9 +89,13 @@ export const GET = withAuth(async (req) => {
           status: claims.status,
           submittedAt: claims.submittedAt,
           receivedAt: claims.receivedAt,
+          charityId: charities.id,
+          charityName: charities.name,
         })
         .from(donations)
         .innerJoin(claims, eq(claims.id, donations.claimId))
+        .innerJoin(batches, eq(batches.id, claims.batchId))
+        .innerJoin(charities, eq(charities.id, batches.charityId))
         .where(and(where, inArray(donorKey, keys)))
         .orderBy(desc(donations.donationDate))
     : []
@@ -99,6 +110,8 @@ export const GET = withAuth(async (req) => {
     for (const r of list) claimMap.set(r.claimId, { id: r.claimId, ref: r.claimRef, status: r.status })
     return {
       key,
+      charityId: first?.charityId ?? '',
+      charityName: first?.charityName ?? '',
       name: first ? [first.title, first.firstName, first.lastName].filter(Boolean).join(' ') : '',
       house: first?.address ?? '',
       postcode: first?.postcode ?? '',

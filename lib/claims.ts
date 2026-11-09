@@ -18,6 +18,8 @@ export interface ClaimDto {
   receivedAt: string | null
   chunkIndex: number
   sourceFile?: string
+  charityId?: string
+  charityName?: string
   /** Earliest / latest donation date in the claim (yyyy-MM-dd). */
   periodFrom?: string | null
   periodTo?: string | null
@@ -26,7 +28,12 @@ export interface ClaimDto {
 export const GIFT_AID_RATE = 0.25
 export const giftAidOn = (donations: number) => Math.round(donations * GIFT_AID_RATE * 100) / 100
 
-export function toClaimDto(row: ClaimRow, sourceFile?: string, period?: { from: string | null; to: string | null }): ClaimDto {
+export function toClaimDto(
+  row: ClaimRow,
+  sourceFile?: string,
+  period?: { from: string | null; to: string | null },
+  charity?: { id: string; name: string }
+): ClaimDto {
   return {
     id: row.id,
     ref: row.ref,
@@ -43,6 +50,8 @@ export function toClaimDto(row: ClaimRow, sourceFile?: string, period?: { from: 
     sourceFile,
     periodFrom: period?.from ?? null,
     periodTo: period?.to ?? null,
+    charityId: charity?.id,
+    charityName: charity?.name,
   }
 }
 

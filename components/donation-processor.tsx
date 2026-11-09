@@ -11,6 +11,8 @@ import ColumnMapper from './column-mapper'
 import { PageHeader, Pill, StatTile } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import { ReviewSkeleton } from '@/components/ui/skeleton'
+import NoCharityNotice from '@/components/charity/no-charity-notice'
+import { useCharity } from '@/components/charity/charity-context'
 import Link from 'next/link'
 import { sanitizeRecords } from '@/lib/sanitize'
 import { extractHouse } from '@/lib/address'
@@ -61,6 +63,10 @@ interface PreviewData {
 }
 
 export default function DonationProcessor() {
+  const { loaded: charitiesLoaded, charities, selectedId, refresh: refreshCharities } = useCharity()
+  // The charity the next upload is for, and the one the loaded file was uploaded for
+  const [uploadCharityId, setUploadCharityId] = useState('')
+  const [fileCharityId, setFileCharityId] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null)
@@ -101,6 +107,17 @@ export default function DonationProcessor() {
   const analyticsRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<number>(0)
   const animationRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null)
+
+  // Uploads follow the charity picked in the sidebar. With "All charities" you choose one here
+  // (or it is picked for you when there is only one).
+  useEffect(() => {
+    if (!charitiesLoaded) return
+    setUploadCharityId((cur) => {
+      if (selectedId !== 'all') return selectedId
+      if (charities.length === 1) return charities[0].id
+      return charities.some(c => c.id === cur) ? cur : ''
+    })
+  }, [charitiesLoaded, charities, selectedId])
 
   // Smooth progress bar animation
   useEffect(() => {
@@ -625,6 +642,11 @@ export default function DonationProcessor() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0]
+      if (!uploadCharityId) {
+        setError('Choose which charity this file is for before uploading.')
+        return
+      }
+      setFileCharityId(uploadCharityId)
       setFile(selectedFile)
       setError(null)
       setResult(null)
@@ -859,6 +881,7 @@ export default function DonationProcessor() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            charityId: fileCharityId,
             filename: file.name,
             stats: {
               totalRecords: allRecords.length,
@@ -883,6 +906,7 @@ export default function DonationProcessor() {
         if (!res.ok) throw new Error(data?.error || `Server responded ${res.status}`)
         claimRefs = data.claims.map((c: { ref: string }) => c.ref)
         setSaved({ claims: data.claims, duplicates: data.duplicates })
+        refreshCharities().catch(() => {})
       } catch (err) {
         setSaveError((err as Error).message)
       }
@@ -1297,10 +1321,21 @@ export default function DonationProcessor() {
     }
   }
 
-  const uploadButton = (
-    <label className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white hover:bg-black cursor-pointer">
+  const noCharities = charitiesLoaded && charities.length === 0
+  const canUpload = !!uploadCharityId && !loading && !processing
+  const fileCharity = charities.find(c => c.id === fileCharityId)
+
+  const uploadButton = noCharities ? (
+    <Link href="/settings" className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white hover:bg-black">
+      Add a charity
+    </Link>
+  ) : (
+    <label
+      title={uploadCharityId ? undefined : 'Choose a charity first'}
+      className={`inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white ${canUpload ? 'hover:bg-black cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+    >
       Upload new file
-      <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading || processing} />
+      <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={!canUpload} />
     </label>
   )
 
@@ -1321,18 +1356,41 @@ export default function DonationProcessor() {
         {!preview && loading && <ReviewSkeleton message="Reading your file..." />}
         {!preview && !loading && (
           <>
+            {noCharities ? (
+              <NoCharityNotice />
+            ) : (
+              <>
             <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
 
-            <label className="block">
-              <div className="border-2 border-dashed border-[#cfc9e8] bg-[#faf9ff] rounded-2xl p-12 text-center hover:border-brand/50 hover:bg-brand-soft/50 transition-colors cursor-pointer">
+            <div className="flex flex-wrap items-center gap-3">
+              <label htmlFor="upload-charity" className="text-ink">Uploading for</label>
+              <select
+                id="upload-charity"
+                value={uploadCharityId}
+                onChange={(e) => setUploadCharityId(e.target.value)}
+                disabled={!charitiesLoaded}
+                className="h-11 min-w-[16rem] rounded-full border border-line bg-white px-4 text-ink cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand/30"
+              >
+                {!uploadCharityId && <option value="">Choose a charity...</option>}
+                {charities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              {!uploadCharityId && charitiesLoaded && (
+                <span className="text-sm text-muted">Pick the charity this file belongs to, or select one in the sidebar.</span>
+              )}
+            </div>
+
+            <label className={`block ${uploadCharityId ? '' : 'opacity-50 cursor-not-allowed'}`}>
+              <div className={`border-2 border-dashed border-[#cfc9e8] bg-[#faf9ff] rounded-2xl p-12 text-center transition-colors ${uploadCharityId ? 'hover:border-brand/50 hover:bg-brand-soft/50 cursor-pointer' : 'pointer-events-none'}`}>
                 <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-white border border-line flex items-center justify-center">
                   <FileUp className="w-6 h-6 text-brand" />
                 </div>
                 <div className="font-display text-xl font-semibold text-ink">Drop your file here, or click to browse</div>
                 <div className="text-muted mt-1">Excel or CSV (.xlsx, .xls, .csv)</div>
-                <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading} />
+                <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading || !uploadCharityId} />
               </div>
             </label>
+              </>
+            )}
 
             <div className="grid md:grid-cols-3 gap-5">
               {[
@@ -1379,7 +1437,7 @@ export default function DonationProcessor() {
                 <div className="min-w-0">
                   <div className="font-display text-2xl font-semibold text-ink truncate">{file?.name}</div>
                   <div className="text-muted mt-1">
-                    {preview.sheetNames.length} sheet{preview.sheetNames.length === 1 ? '' : 's'} · {preview.totalRecords.toLocaleString()} rows ·{' '}
+                    {fileCharity ? `${fileCharity.name} · ` : ''}{preview.sheetNames.length} sheet{preview.sheetNames.length === 1 ? '' : 's'} · {preview.totalRecords.toLocaleString()} rows ·{' '}
                     {preview.eligibleRecords.toLocaleString()} Gift Aid eligible
                     {preview.totalRecords > preview.eligibleRecords && ` (${(preview.totalRecords - preview.eligibleRecords).toLocaleString()} skipped)`}
                   </div>
@@ -1543,7 +1601,7 @@ export default function DonationProcessor() {
                 </div>
                 <div>
                   <h2 className="font-display text-2xl font-semibold text-ink">Claim saved</h2>
-                  <p className="text-muted">Your files are ready to download.</p>
+                  <p className="text-muted">{fileCharity ? `Saved for ${fileCharity.name}. ` : ''}Your files are ready to download.</p>
                 </div>
               </div>
               <div className="flex gap-3">

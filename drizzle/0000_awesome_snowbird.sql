@@ -2,11 +2,18 @@ CREATE TYPE "public"."claim_status" AS ENUM('pending', 'submitted', 'received');
 CREATE SEQUENCE "public"."claim_ref_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1;--> statement-breakpoint
 CREATE TABLE "batches" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"charity_id" uuid NOT NULL,
 	"filename" text NOT NULL,
 	"total_records" integer DEFAULT 0 NOT NULL,
 	"eligible_records" integer DEFAULT 0 NOT NULL,
 	"valid_records" integer DEFAULT 0 NOT NULL,
 	"invalid_records" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charities" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -47,9 +54,12 @@ CREATE TABLE "donations" (
 	"amount" numeric(12, 2) NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "batches" ADD CONSTRAINT "batches_charity_id_charities_id_fk" FOREIGN KEY ("charity_id") REFERENCES "public"."charities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "claim_events" ADD CONSTRAINT "claim_events_claim_id_claims_id_fk" FOREIGN KEY ("claim_id") REFERENCES "public"."claims"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "claims" ADD CONSTRAINT "claims_batch_id_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."batches"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "donations" ADD CONSTRAINT "donations_claim_id_claims_id_fk" FOREIGN KEY ("claim_id") REFERENCES "public"."claims"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "batches_charity_idx" ON "batches" USING btree ("charity_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "charities_name_lower_unique" ON "charities" USING btree (lower("name"));--> statement-breakpoint
 CREATE INDEX "claim_events_claim_idx" ON "claim_events" USING btree ("claim_id");--> statement-breakpoint
 CREATE INDEX "claims_status_idx" ON "claims" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "claims_batch_idx" ON "claims" USING btree ("batch_id");--> statement-breakpoint

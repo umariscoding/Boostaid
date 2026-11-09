@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   date,
   index,
@@ -8,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -17,16 +19,37 @@ export type ClaimStatus = (typeof claimStatus.enumValues)[number]
 /** Monotonic counter used to build human-readable claim references (GA-2026-0001). */
 export const claimRefSeq = pgSequence('claim_ref_seq', { startWith: 1 })
 
-/** One upload that was processed through the cleaner. */
-export const batches = pgTable('batches', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  filename: text('filename').notNull(),
-  totalRecords: integer('total_records').notNull().default(0),
-  eligibleRecords: integer('eligible_records').notNull().default(0),
-  validRecords: integer('valid_records').notNull().default(0),
-  invalidRecords: integer('invalid_records').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+/**
+ * A charity whose donations are being claimed. Deleting a charity deletes everything that belongs to it
+ * (its uploads, claims, donations and status history) through the foreign keys below.
+ */
+export const charities = pgTable(
+  'charities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('charities_name_lower_unique').on(sql`lower(${t.name})`)]
+)
+
+/** One upload that was processed through the cleaner, for one charity. */
+export const batches = pgTable(
+  'batches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id')
+      .notNull()
+      .references(() => charities.id, { onDelete: 'cascade' }),
+    filename: text('filename').notNull(),
+    totalRecords: integer('total_records').notNull().default(0),
+    eligibleRecords: integer('eligible_records').notNull().default(0),
+    validRecords: integer('valid_records').notNull().default(0),
+    invalidRecords: integer('invalid_records').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('batches_charity_idx').on(t.charityId)]
+)
 
 /** One HMRC submission file (up to 1000 donations). This is what gets tracked. */
 export const claims = pgTable(

@@ -141,7 +141,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               </div>
               {claim ? (
                 <p className="text-muted mt-2">
-                  {claim.donationCount.toLocaleString()} donations · {fmtPeriod(claim.periodFrom, claim.periodTo)} · from{' '}
+                  {claim.charityName} · {claim.donationCount.toLocaleString()} donations · {fmtPeriod(claim.periodFrom, claim.periodTo)} · from{' '}
                   {claim.sourceFile} · created {fmtDateTime(claim.createdAt)}
                 </p>
               ) : (

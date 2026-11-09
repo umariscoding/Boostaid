@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from 'drizzle-orm'
-import { batches, claimEvents, claims, donations, getDb } from '@/lib/db'
-import { withAuth } from '@/lib/api'
+import { batches, charities, claimEvents, claims, donations, getDb } from '@/lib/db'
+import { UUID_RE, withAuth } from '@/lib/api'
 import { normalisePostcode, ukDateToIso } from '@/lib/claims'
 
 interface IncomingDonation {
@@ -23,6 +23,11 @@ export const POST = withAuth(async (req) => {
   if (!body || !Array.isArray(body.claims) || body.claims.length === 0 || body.claims.length > 500) {
     return NextResponse.json({ error: 'No claims supplied' }, { status: 400 })
   }
+
+  const charityId = String(body.charityId ?? '')
+  if (!UUID_RE.test(charityId)) throw new RangeError('Choose which charity this upload is for')
+  const [charity] = await getDb().select().from(charities).where(sql`${charities.id} = ${charityId}`)
+  if (!charity) return NextResponse.json({ error: 'That charity no longer exists' }, { status: 404 })
 
   const prepared: { rows: (typeof donations.$inferInsert)[]; total: number }[] = []
   for (const c of body.claims as { donations?: IncomingDonation[] }[]) {
@@ -56,6 +61,7 @@ export const POST = withAuth(async (req) => {
     const [batch] = await tx
       .insert(batches)
       .values({
+        charityId,
         filename: str(body.filename, 255) || 'upload.xlsx',
         totalRecords: count(stats.totalRecords),
         eligibleRecords: count(stats.eligibleRecords),
@@ -88,7 +94,7 @@ export const POST = withAuth(async (req) => {
       created.push({ id: claim.id, ref, chunkIndex: i + 1, donationCount: rows.length, totalAmount: total })
     }
 
-    // Donations that already appear in an earlier batch (same donor, postcode, date and amount)
+    // Donations that already appear in an earlier batch of the SAME charity (same donor, postcode, date and amount)
     const dupes = await tx.execute<{ ref: string; n: string }>(sql`
       select oc.ref as ref, count(*)::text as n
       from ${donations} d
@@ -100,12 +106,14 @@ export const POST = withAuth(async (req) => {
        and lower(o.first_name) = lower(d.first_name)
        and lower(o.last_name) = lower(d.last_name)
       join ${claims} oc on oc.id = o.claim_id and oc.batch_id <> ${batch.id}
+      join ${batches} ob on ob.id = oc.batch_id and ob.charity_id = ${charityId}
       group by oc.ref
       order by oc.ref
     `)
 
     return {
       batchId: batch.id,
+      charity: { id: charity.id, name: charity.name },
       claims: created,
       duplicates: {
         count: dupes.rows.reduce((s, r) => s + Number(r.n), 0),

@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { asc, desc, eq, inArray, type SQL } from 'drizzle-orm'
-import { batches, claimEvents, claims, donations, getDb } from '@/lib/db'
+import { batches, charities, claimEvents, claims, donations, getDb } from '@/lib/db'
 
 const fmtDateTime = (d: Date | null) =>
   d ? d.toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }) : ''
@@ -14,14 +14,16 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
   const db = getDb()
 
   const claimRows = await db
-    .select({ claim: claims, filename: batches.filename })
+    .select({ claim: claims, filename: batches.filename, charity: charities.name })
     .from(claims)
     .innerJoin(batches, eq(batches.id, claims.batchId))
+    .innerJoin(charities, eq(charities.id, batches.charityId))
     .where(where)
     .orderBy(desc(claims.createdAt), desc(claims.chunkIndex))
 
   const ids = claimRows.map((r) => r.claim.id)
   const refById = new Map(claimRows.map((r) => [r.claim.id, r.claim]))
+  const charityById = new Map(claimRows.map((r) => [r.claim.id, r.charity]))
 
   // Chunked so a large export never exceeds the Postgres parameter limit
   const donationRows: (typeof donations.$inferSelect)[] = []
@@ -37,7 +39,8 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
   const wb = XLSX.utils.book_new()
 
   const claimsSheet = XLSX.utils.json_to_sheet(
-    claimRows.map(({ claim: c, filename }) => ({
+    claimRows.map(({ claim: c, filename, charity }) => ({
+      Charity: charity,
       'Claim Reference': c.ref,
       'HMRC Reference': c.hmrcRef ?? '',
       Status: STATUS_LABEL[c.status],
@@ -50,11 +53,12 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       Notes: c.notes ?? '',
     }))
   )
-  claimsSheet['!cols'] = [18, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
+  claimsSheet['!cols'] = [26, 18, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, claimsSheet, 'Claims')
 
   const donationsSheet = XLSX.utils.json_to_sheet(
     donationRows.map((d) => ({
+      Charity: charityById.get(d.claimId) ?? '',
       'Claim Reference': refById.get(d.claimId)?.ref ?? '',
       'Claim Status': STATUS_LABEL[refById.get(d.claimId)?.status ?? 'pending'],
       Title: d.title,
@@ -66,18 +70,19 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       'Amount (GBP)': Number(d.amount),
     }))
   )
-  donationsSheet['!cols'] = [18, 12, 8, 16, 16, 34, 12, 14, 14].map((wch) => ({ wch }))
+  donationsSheet['!cols'] = [26, 18, 12, 8, 16, 16, 34, 12, 14, 14].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, donationsSheet, 'Donations')
 
   const historySheet = XLSX.utils.json_to_sheet(
     eventRows.map((e) => ({
+      Charity: charityById.get(e.claimId) ?? '',
       'Claim Reference': refById.get(e.claimId)?.ref ?? '',
       Status: STATUS_LABEL[e.status],
       'Changed At': fmtDateTime(e.at),
       Note: e.note ?? '',
     }))
   )
-  historySheet['!cols'] = [18, 12, 18, 40].map((wch) => ({ wch }))
+  historySheet['!cols'] = [26, 18, 12, 18, 40].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, historySheet, 'Status History')
 
   return XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' }) as Buffer
