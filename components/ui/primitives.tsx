@@ -40,9 +40,9 @@ export function StatTile({
 }) {
   return (
     <div className={cn(card, 'p-6')}>
-      <div className="text-[15px] text-muted">{label}</div>
-      <div className={cn('font-display text-5xl font-bold tracking-tight mt-1.5', TONE_TEXT[tone])}>{value}</div>
-      {caption && <div className="text-[15px] text-muted mt-2">{caption}</div>}
+      <div className="text-base text-muted">{label}</div>
+      <div className={cn('font-display text-4xl font-bold tracking-tight mt-1.5', TONE_TEXT[tone])}>{value}</div>
+      {caption && <div className="text-base text-muted mt-2">{caption}</div>}
     </div>
   )
 }
@@ -77,7 +77,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
       <div>
-        <h1 className="font-display text-5xl font-bold tracking-tight text-ink">{title}</h1>
+        <h1 className="font-display text-4xl font-bold tracking-tight text-ink">{title}</h1>
         {subtitle && <p className="text-muted mt-2">{subtitle}</p>}
       </div>
       {action ?? (

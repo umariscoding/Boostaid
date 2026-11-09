@@ -114,7 +114,7 @@ export default function DonorsPage() {
           <input
             id="q"
             autoFocus
-            className="w-full h-16 px-6 rounded-full bg-white border border-line text-ink text-lg placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50"
+            className="w-full h-14 px-6 rounded-full bg-white border border-line text-ink text-base placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50"
             placeholder="e.g. Sample or E1 2AB"
             value={query}
             onChange={(e) => {
@@ -124,7 +124,7 @@ export default function DonorsPage() {
           />
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className={`h-16 px-6 rounded-full border text-sm font-medium inline-flex items-center gap-2 cursor-pointer ${
+            className={`h-14 px-6 rounded-full border text-sm font-medium inline-flex items-center gap-2 cursor-pointer ${
               showFilters ? 'bg-brand-soft border-brand/30 text-brand' : 'bg-white border-line text-ink hover:bg-wash'
             }`}
           >
@@ -180,7 +180,7 @@ export default function DonorsPage() {
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={loading}>
-            <table className="w-full min-w-[1000px] table-fixed text-[15px]">
+            <table className="w-full min-w-[1000px] table-fixed text-base">
               <colgroup>
                 <col className="w-12" />
                 <col className="w-[20%]" />

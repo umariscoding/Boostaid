@@ -163,7 +163,7 @@ export default function ClaimsPage() {
         ) : (
           claims && (
             <div className={`overflow-x-auto transition-opacity ${fetching ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={fetching}>
-              <table className="w-full text-[15px]">
+              <table className="w-full text-base">
                 <thead>
                   <tr className="border-b border-line">
                     <th className={th}>Status</th>

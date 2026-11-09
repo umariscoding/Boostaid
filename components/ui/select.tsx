@@ -5,9 +5,9 @@ import { cn } from '@/lib/utils'
 type Variant = 'light' | 'compact' | 'dark'
 
 const SELECT: Record<Variant, string> = {
-  light: 'h-11 rounded-full border border-line bg-white pl-4 pr-10 text-[15px] text-ink focus:ring-brand/30',
+  light: 'h-11 rounded-full border border-line bg-white pl-4 pr-10 text-base text-ink focus:ring-brand/30',
   compact: 'h-9 rounded-full border border-line bg-white pl-4 pr-10 text-sm text-ink focus:ring-brand/30',
-  dark: 'h-11 w-full rounded-xl bg-side-active pl-4 pr-10 text-[15px] font-medium text-white focus:ring-[#7c5cf0]/60',
+  dark: 'h-11 w-full rounded-xl bg-side-active pl-4 pr-10 text-base font-medium text-white focus:ring-[#7c5cf0]/60',
 }
 // The chevron is centred on the control's height and sits the same distance from the edge in every variant
 const CHEVRON: Record<Variant, string> = {

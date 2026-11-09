@@ -24,7 +24,7 @@ export function TableSkeleton({ columns, rows = 6, minWidth }: { columns: Skelet
   return (
     <div role="status" aria-busy="true" className="overflow-x-auto">
       <span className="sr-only">Loading</span>
-      <table className="w-full table-fixed text-[15px]" style={minWidth ? { minWidth } : undefined}>
+      <table className="w-full table-fixed text-base" style={minWidth ? { minWidth } : undefined}>
         <colgroup>
           {columns.map((c, i) => (
             <col key={i} style={c.width ? { width: c.width } : undefined} />

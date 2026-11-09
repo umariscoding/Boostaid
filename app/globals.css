@@ -39,6 +39,8 @@
 
 html {
   color-scheme: light;
+  /* Dashboard scale: all rem-based sizes (type, spacing, controls) derive from this */
+  font-size: 14px;
 }
 
 body {

@@ -134,7 +134,7 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[15px]">
+            <table className="w-full text-base">
               <thead>
                 <tr className="border-b border-line">
                   <th className={th}>Charity</th>

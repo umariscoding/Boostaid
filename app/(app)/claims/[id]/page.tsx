@@ -133,7 +133,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
             <div>
               <div className="flex items-center gap-4">
                 {claim ? (
-                  <h1 className="font-display text-5xl font-bold tracking-tight text-ink">{claim.ref}</h1>
+                  <h1 className="font-display text-4xl font-bold tracking-tight text-ink">{claim.ref}</h1>
                 ) : (
                   <Skeleton className="h-12 w-64" />
                 )}
@@ -152,7 +152,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               <div>
                 <div className="text-sm text-muted">Donated</div>
                 {claim ? (
-                  <div className="font-display text-3xl font-bold text-ink">{gbp(claim.totalAmount)}</div>
+                  <div className="font-display text-2xl font-bold text-ink">{gbp(claim.totalAmount)}</div>
                 ) : (
                   <Skeleton className="h-9 w-32 mt-1 ml-auto" />
                 )}
@@ -160,7 +160,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               <div>
                 <div className="text-sm text-muted">Gift Aid (25%)</div>
                 {claim ? (
-                  <div className="font-display text-3xl font-bold text-good">{gbp(claim.giftAidAmount)}</div>
+                  <div className="font-display text-2xl font-bold text-good">{gbp(claim.giftAidAmount)}</div>
                 ) : (
                   <Skeleton className="h-9 w-32 mt-1 ml-auto" />
                 )}
@@ -247,7 +247,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
             {claim ? (
               <>
                 <div className="overflow-auto">
-                  <table className="w-full text-[15px]">
+                  <table className="w-full text-base">
                     <thead className="sticky top-0 bg-white">
                       <tr className="border-b border-line">
                         <th className={th}>Donor</th>

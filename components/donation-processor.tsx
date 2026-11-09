@@ -1510,7 +1510,7 @@ export default function DonationProcessor() {
                   <div className="py-12 text-center text-muted">Nothing to fix. Every eligible row passed all checks.</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-[15px]">
+                    <table className="w-full text-base">
                       <thead>
                         <tr className="border-b border-line">
                           <th className="px-5 py-3.5 text-left text-sm font-medium text-muted">Reason</th>
@@ -1768,7 +1768,7 @@ export default function DonationProcessor() {
                   ['Cells changed in total', result.analytics.totalCellsModified],
                 ].map(([label, value]) => (
                   <div key={label as string}>
-                    <div className="font-display text-3xl font-bold text-ink">{(value as number).toLocaleString()}</div>
+                    <div className="font-display text-2xl font-bold text-ink">{(value as number).toLocaleString()}</div>
                     <div className="text-sm text-muted">{label}</div>
                   </div>
                 ))}

@@ -36,7 +36,7 @@ function CharityPicker() {
       ) : charities.length === 0 ? (
         <Link
           href="/settings"
-          className="flex h-11 items-center gap-2 rounded-xl border border-dashed border-side-muted/50 px-4 text-[15px] text-white hover:bg-side-active"
+          className="flex h-11 items-center gap-2 rounded-xl border border-dashed border-side-muted/50 px-4 text-base text-white hover:bg-side-active"
         >
           <Plus className="w-4 h-4" /> Add a charity
         </Link>
@@ -77,7 +77,7 @@ export default function Sidebar() {
           <Link
             key={href}
             href={href}
-            className={`flex shrink-0 items-center gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-[15px] font-medium transition-colors ${
+            className={`flex shrink-0 items-center gap-2 md:gap-3 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-base font-medium transition-colors ${
               isActive(href) ? 'bg-side-active text-white' : 'text-[#c9c9d8] hover:bg-side-active/60 hover:text-white'
             }`}
           >
