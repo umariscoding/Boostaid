@@ -9,7 +9,7 @@ import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
 import NoCharityNotice from '@/components/charity/no-charity-notice'
-import { useCharity } from '@/components/charity/charity-context'
+import { useCharity } from '@/lib/store/charity'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,

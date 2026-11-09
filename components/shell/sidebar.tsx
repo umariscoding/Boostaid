@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Gift, PieChart, Plus, Receipt, Search, Settings, Sparkles, type LucideIcon } from 'lucide-react'
-import { useCharity } from '@/components/charity/charity-context'
+import { Gift, PieChart, Plus, Receipt, Search, Settings, Sparkles, type LucideIcon } from 'lucide-react'
+import { Select } from '@/components/ui/select'
+import { useCharity } from '@/lib/store/charity'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -40,22 +41,14 @@ function CharityPicker() {
           <Plus className="w-4 h-4" /> Add a charity
         </Link>
       ) : (
-        <div className="relative">
-          <select
-            aria-label="Charity"
-            value={selectedId}
-            onChange={(e) => select(e.target.value)}
-            className="h-11 w-full appearance-none truncate rounded-xl bg-side-active pl-4 pr-10 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#7c5cf0]/60 cursor-pointer"
-          >
-            <option value="all">All charities</option>
-            {charities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-side-muted" />
-        </div>
+        <Select variant="dark" aria-label="Charity" value={selectedId} onChange={(e) => select(e.target.value)}>
+          <option value="all">All charities</option>
+          {charities.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
       )}
     </div>
   )

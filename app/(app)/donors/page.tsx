@@ -7,7 +7,7 @@ import { TableSkeleton } from '@/components/ui/skeleton'
 import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import NoCharityNotice from '@/components/charity/no-charity-notice'
-import { useCharity } from '@/components/charity/charity-context'
+import { useCharity } from '@/lib/store/charity'
 import { StatusBadge, apiJson, fmtDay, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
 
 interface DonationRow {

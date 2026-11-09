@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { StatTile } from '@/components/ui/primitives'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useCharity } from '@/components/charity/charity-context'
+import { useCharity } from '@/lib/store/charity'
 import { apiJson, gbp, type Status } from './shared'
 import { giftAidOn } from '@/lib/claims'
 

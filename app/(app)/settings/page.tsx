@@ -7,7 +7,7 @@ import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/co
 import { Dialog } from '@/components/ui/dialog'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { apiJson, fmtDay, gbp } from '@/components/claims/shared'
-import { useCharity, type CharityInfo } from '@/components/charity/charity-context'
+import { useCharity, type CharityInfo } from '@/lib/store/charity'
 
 export default function SettingsPage() {
   const { charities, loaded, selectedId, select, refresh } = useCharity()
