@@ -3,21 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white shadow hover:bg-blue-700",
-        destructive: "bg-red-600 text-white shadow-sm hover:bg-red-700",
-        outline: "border border-gray-300 bg-white shadow-sm hover:bg-gray-100",
-        secondary: "bg-gray-100 text-gray-900 shadow-sm hover:bg-gray-200",
-        ghost: "hover:bg-gray-100",
-        link: "text-blue-600 underline-offset-4 hover:underline",
+        default: "bg-brand text-white hover:bg-brand-dark",
+        dark: "bg-ink text-white hover:bg-black",
+        success: "bg-good text-white hover:bg-[#235a34]",
+        outline: "border border-line bg-white text-ink hover:bg-wash",
+        ghost: "text-muted hover:bg-wash hover:text-ink",
+        danger: "border border-bad/30 bg-white text-bad hover:bg-bad-soft",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        default: "h-11 px-5 text-sm",
+        sm: "h-9 px-4 text-sm",
+        lg: "h-12 px-6 text-base",
         icon: "h-9 w-9",
       },
     },
@@ -35,7 +35,8 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, size, asChild: _asChild, ...props }, ref) => {
+    void _asChild
     return (
       <button
         className={cn(buttonVariants({ variant, size, className }))}

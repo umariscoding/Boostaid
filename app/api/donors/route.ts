@@ -7,7 +7,7 @@ import { escapeLike, normalisePostcode } from '@/lib/claims'
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
- * Donor lookup. Filters (at least one required):
+ * Donor lookup. Optional filters (with none, the most recent donations are returned):
  *   q         name words - every word must appear in the donor's name
  *   postcode  postcode prefix, spaces/case ignored
  *   from, to  donation date range (yyyy-MM-dd)
@@ -38,11 +38,13 @@ export const GET = withAuth(async (req) => {
   if (to) conditions.push(lte(donations.donationDate, to))
   if (amount) conditions.push(eq(donations.amount, Number(amount).toFixed(2)))
 
-  if (conditions.length === 0) {
-    throw new RangeError('Enter a name, postcode, date or amount to search')
-  }
-
   const limit = 200
+  const where = conditions.length ? and(...conditions) : undefined
+  const donorKey = sql`lower(${donations.firstName}) || '|' || lower(${donations.lastName}) || '|' || ${donations.postcodeNorm}`
+  const [{ totalDonors }] = await getDb()
+    .select({ totalDonors: sql<number>`count(distinct ${donorKey})::int` })
+    .from(donations)
+    .where(where)
   const rows = await getDb()
     .select({
       id: donations.id,
@@ -62,12 +64,13 @@ export const GET = withAuth(async (req) => {
     })
     .from(donations)
     .innerJoin(claims, eq(claims.id, donations.claimId))
-    .where(and(...conditions))
+    .where(where)
     .orderBy(desc(donations.donationDate), donations.lastName)
     .limit(limit + 1)
 
   return NextResponse.json({
     truncated: rows.length > limit,
+    totalDonors,
     results: rows.slice(0, limit).map((r) => ({
       ...r,
       amount: Number(r.amount),

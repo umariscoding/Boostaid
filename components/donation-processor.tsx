@@ -6,9 +6,9 @@ import ExcelJS from 'exceljs'
 import { parse, isValid, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Download, FileSpreadsheet, AlertCircle, CheckCircle2, Eye, Loader2, Check, ChevronLeft, ChevronRight, FileUp, Columns, Sparkles, FileText, RotateCcw, Coins, ShieldCheck } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Columns, Download, Eye, FileSpreadsheet, FileText, FileUp, Loader2, RotateCcw } from 'lucide-react'
 import ColumnMapper from './column-mapper'
-import AppHeader from './app-header'
+import { PageHeader, Pill, StatTile } from '@/components/ui/primitives'
 import Link from 'next/link'
 import { sanitizeRecords } from '@/lib/sanitize'
 import { extractHouse } from '@/lib/address'
@@ -32,6 +32,9 @@ interface ProcessedRecord {
   original: any
   processed: any
   isValid: boolean
+  changesApplied?: string[]
+  /** Why a row needs a person to look at it ("No house number", "Partial postcode", ...). */
+  reasons?: string[]
 }
 
 interface ProcessingAnalytics {
@@ -89,6 +92,8 @@ export default function DonationProcessor() {
   } | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [recordsPerPage, setRecordsPerPage] = useState(10)
+  const [fixLimit, setFixLimit] = useState(25)
+  const [showOutput, setShowOutput] = useState(false)
   const analyticsRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<number>(0)
   const animationRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null)
@@ -581,14 +586,17 @@ export default function DonationProcessor() {
     // (e.g. Arabic or Cyrillic script) can't be sent to HMRC as-is and needs a person to transliterate it
     const hasUnconvertibleChars = [finalFirstName, finalLastName, house.value ?? cleanedAddress].some(v => /[^ -~]/.test(v))
 
-    const needsReview =
-      needsColoringPostcode(record['Gift Aid Postal Code']) ||
-      house.value === null ||
-      addressHasDuplicateWords ||
-      hasUnconvertibleChars ||
-      !record['Last Donation Date'] ||
-      !finalFirstName ||
-      !finalLastName
+    const rawPostcode = String(record['Gift Aid Postal Code'] || '').trim()
+    const reasons: string[] = []
+    if (needsColoringPostcode(record['Gift Aid Postal Code'])) {
+      reasons.push(!rawPostcode ? 'No postcode' : rawPostcode.replace(/\s/g, '').length < 5 ? 'Partial postcode' : 'Check postcode')
+    }
+    if (house.value === null) reasons.push(cleanedAddress.trim() ? 'No house number' : 'No address')
+    if (addressHasDuplicateWords) reasons.push('Repeated words')
+    if (hasUnconvertibleChars) reasons.push('Special characters')
+    if (!record['Last Donation Date']) reasons.push('No date')
+    if (!finalFirstName || !finalLastName) reasons.push('Missing name')
+    const needsReview = reasons.length > 0
 
     const processed = {
       'Title': title,
@@ -605,7 +613,8 @@ export default function DonationProcessor() {
       original: record,
       processed: processed,
       isValid: !needsReview,
-      changesApplied: changesApplied
+      changesApplied: changesApplied,
+      reasons
     }
   }
 
@@ -617,6 +626,9 @@ export default function DonationProcessor() {
       setResult(null)
       setSaved(null)
       setSaveError(null)
+      setFixLimit(25)
+      setShowOutput(false)
+      setPreviewPage(1)
       setColumnMapping(null)
       setShowMapper(false)
       setLoading(true)
@@ -687,6 +699,17 @@ export default function DonationProcessor() {
     }
   }
 
+  const blankAnalytics = (): ProcessingAnalytics => ({
+    titlesFilled: 0,
+    namesFixed: 0,
+    namesSplitFromEmail: 0,
+    addressesShortened: 0,
+    postcodesCorrected: 0,
+    datesFormatted: 0,
+    symbolsCleaned: 0,
+    totalCellsModified: 0
+  })
+
   const handleMappingComplete = (mapping: ColumnMapping, config: GiftAidConfig) => {
     setColumnMapping(mapping)
 
@@ -702,7 +725,7 @@ export default function DonationProcessor() {
     // Re-process ALL records for preview with mapping
     if (preview) {
       const mappedRecords = preview.rawRecords.map(rec => applyColumnMapping(rec, mapping))
-      const allProcessed = mappedRecords.map(rec => processRecord(rec, updatedConfig))
+      const allProcessed = mappedRecords.map(rec => processRecord(rec, updatedConfig, blankAnalytics()))
       const eligibleCount = mappedRecords.filter(rec => isEligibleDonation(rec, updatedConfig)).length
 
       setPreview({
@@ -776,7 +799,7 @@ export default function DonationProcessor() {
       // Only records that need review - for "Needs Review" sheet
       const recordsNeedingReview = processedRecords
         .filter(r => !r.isValid && r.processed !== null)
-        .map(r => r.processed)
+        .map(r => ({ ...r.processed, Reason: (r.reasons ?? []).join(', ') }))
 
       const totalAmountReviewed = eligibleRecords.reduce((sum, rec) => sum + (Number(rec['Total Donation Amount']) || 0), 0)
       const totalGiftAidValue = allProcessedForCorrect.reduce((sum, rec) => sum + (Number((rec as any)['Donation Amount']) || 0), 0)
@@ -1231,93 +1254,95 @@ export default function DonationProcessor() {
     printWindow.document.close()
   }
 
+  // ---- Derived values for the Clean screen ----
+  const eligibleItems = preview ? preview.beforeAfter.filter(i => i.processed !== null) : []
+  const readyCount = eligibleItems.filter(i => i.isValid).length
+  const rowsToFix = eligibleItems.filter(i => !i.isValid)
+  const autoFixedCount = eligibleItems.filter(i => (i.changesApplied?.length ?? 0) > 0).length
+  const money = (n: number) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const downloadFile = (url: string, name: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    link.click()
+  }
+
+  const downloadAll = async () => {
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+    if (downloadUrls.cleanedData) {
+      downloadFile(downloadUrls.cleanedData, 'cleaned_data.xlsx')
+      await delay(300)
+    }
+    for (const f of [...downloadUrls.hmrcFiles, ...downloadUrls.outputFiles]) {
+      downloadFile(f.url, f.name)
+      await delay(300)
+    }
+  }
+
+  const uploadButton = (
+    <label className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-semibold text-white hover:bg-black cursor-pointer">
+      Upload new file
+      <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading || processing} />
+    </label>
+  )
+
+  const subtitle = result
+    ? 'Your claim is ready.'
+    : preview
+      ? showMapper
+        ? 'Match your columns to the fields HMRC needs.'
+        : 'Check the numbers, then save the claim.'
+      : 'Upload a donations spreadsheet and get it ready for HMRC.'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <AppHeader />
+    <>
+      <PageHeader title="Clean" subtitle={subtitle} action={uploadButton} />
 
-      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
-
-        {/* Upload Section */}
+      <div className="space-y-6">
+        {/* ---------- Idle: nothing uploaded yet ---------- */}
         {!preview && (
           <>
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg shadow-purple-500/30">
-                    1
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Upload Your Excel File</h2>
-                    <p className="text-sm text-slate-400">Select a .xlsx or .xls file containing donation records</p>
-                  </div>
+            <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
+
+            <label className="block">
+              <div className="border-2 border-dashed border-[#cfc9e8] bg-[#faf9ff] rounded-2xl p-12 text-center hover:border-brand/50 hover:bg-brand-soft/50 transition-colors cursor-pointer">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-white border border-line flex items-center justify-center">
+                  <FileUp className="w-6 h-6 text-brand" />
                 </div>
-
-                <label className="block">
-                  <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-500/5 transition-all cursor-pointer group">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-700/50 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                      <FileUp className="w-8 h-8 text-slate-400 group-hover:text-purple-400 transition-colors" />
-                    </div>
-                    <div className="text-slate-300 font-medium mb-1">Drop your file here or click to browse</div>
-                    <div className="text-sm text-slate-500">Supports Excel and CSV files (.xlsx, .xls, .csv)</div>
-                    <Input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      disabled={loading}
-                    />
-                  </div>
-                </label>
-
-                {loading && (
-                  <div className="flex items-center justify-center gap-3 mt-6 py-4 bg-purple-500/10 rounded-xl border border-purple-500/20">
-                    <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-                    <span className="text-purple-300 font-medium">Reading your file...</span>
-                  </div>
-                )}
+                <div className="font-display text-xl font-semibold text-ink">Drop your file here, or click to browse</div>
+                <div className="text-muted mt-1">Excel or CSV (.xlsx, .xls, .csv)</div>
+                <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading} />
               </div>
-            </div>
+            </label>
 
-            {/* How It Works */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-6">
-              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-400" />
-                How It Works
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center flex-shrink-0">
-                    <Columns className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white mb-1">1. Map Columns</div>
-                    <p className="text-sm text-slate-400">Drag and drop to match your columns to required fields</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white mb-1">2. Preview Changes</div>
-                    <p className="text-sm text-slate-400">Review transformations before processing</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center flex-shrink-0">
-                    <Download className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white mb-1">3. Download Files</div>
-                    <p className="text-sm text-slate-400">Get cleaned data ready for HMRC submission</p>
-                  </div>
-                </div>
+            {loading && (
+              <div className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-brand-soft text-brand font-medium">
+                <Loader2 className="w-5 h-5 animate-spin" /> Reading your file...
               </div>
+            )}
+
+            <div className="grid md:grid-cols-3 gap-5">
+              {[
+                { icon: Columns, title: '1. Map columns', text: 'Match your spreadsheet columns to the fields HMRC needs.' },
+                { icon: Eye, title: '2. Check the rows', text: 'See what was fixed automatically and what needs a decision.' },
+                { icon: Download, title: '3. Save the claim', text: 'Get schedules named with their totals, and track the claim.' },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="bg-white border border-line rounded-2xl p-6 flex gap-4">
+                  <div className="w-11 h-11 rounded-full bg-brand-soft text-brand flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-display text-lg font-semibold text-ink">{title}</div>
+                    <p className="text-muted mt-1">{text}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
 
+        {/* ---------- Map columns ---------- */}
         {showMapper && preview && (
           <ColumnMapper
             detectedColumns={preview.columns}
@@ -1326,631 +1351,380 @@ export default function DonationProcessor() {
           />
         )}
 
+        {/* ---------- Review: tiles, file card, rows to fix ---------- */}
         {preview && !showMapper && preview.beforeAfter.length > 0 && !result && (
           <>
-            {/* Step 2 Header */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg shadow-purple-500/30">
-                    2
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Preview & Process</h2>
-                    <p className="text-sm text-slate-400">{preview.eligibleRecords.toLocaleString()} eligible records ready</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+              <StatTile label="Rows uploaded" value={preview.totalRecords.toLocaleString()} caption={`${preview.sheetNames.length} sheet${preview.sheetNames.length === 1 ? '' : 's'}`} />
+              <StatTile label="Ready for HMRC" tone="good" value={readyCount.toLocaleString()} caption="All checks passed" />
+              <StatTile label="Auto-fixed" tone="info" value={autoFixedCount.toLocaleString()} caption="House numbers, names, characters" />
+              <StatTile label="To fix" tone="bad" value={rowsToFix.length.toLocaleString()} caption="Need a decision" />
+            </div>
+
+            <div className="border-2 border-dashed border-[#cfc9e8] bg-[#faf9ff] rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="font-display text-2xl font-semibold text-ink truncate">{file?.name}</div>
+                  <div className="text-muted mt-1">
+                    {preview.sheetNames.length} sheet{preview.sheetNames.length === 1 ? '' : 's'} · {preview.totalRecords.toLocaleString()} rows ·{' '}
+                    {preview.eligibleRecords.toLocaleString()} Gift Aid eligible
+                    {preview.totalRecords > preview.eligibleRecords && ` (${(preview.totalRecords - preview.eligibleRecords).toLocaleString()} skipped)`}
                   </div>
                 </div>
-                <Button
-                  onClick={processFile}
-                  disabled={processing}
-                  size="lg"
-                  className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/30 border-0"
-                >
-                  {processing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Process All Records
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-3">
+                  <Button variant="outline" size="lg" onClick={() => setShowMapper(true)} disabled={processing}>
+                    Change column mapping
+                  </Button>
+                  <Button size="lg" onClick={processFile} disabled={processing || readyCount === 0}>
+                    {processing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save claim & make files'
+                    )}
+                  </Button>
+                </div>
               </div>
-
-              {/* Progress Bar */}
               {processing && (
-                <div className="mt-4">
-                  <div className="text-sm text-slate-300 mb-2">Processing your data...</div>
-                  <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-violet-500 to-purple-600 transition-all duration-500 ease-out"
-                      style={{ width: `${processingProgress}% ` }}
-                    />
+                <div className="mt-5">
+                  <div className="text-sm text-muted mb-2">Processing your data...</div>
+                  <div className="w-full h-2.5 bg-white border border-line rounded-full overflow-hidden">
+                    <div className="h-full bg-brand transition-all duration-500 ease-out" style={{ width: `${processingProgress}%` }} />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-700/50 p-4">
-                <div className="text-xs font-medium text-slate-400 uppercase tracking-wide">Total</div>
-                <div className="text-2xl font-bold text-white mt-1">{preview.totalRecords.toLocaleString()}</div>
+            {/* Rows to fix */}
+            <div>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                <h2 className="font-display text-2xl font-semibold text-ink">Rows to fix ({rowsToFix.length.toLocaleString()})</h2>
+                <p className="text-muted">
+                  These are left out of the HMRC files. They are listed on the &ldquo;Needs Review&rdquo; sheet of the cleaned data file.
+                </p>
               </div>
-              <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl border border-purple-500/30 p-4">
-                <div className="text-xs font-medium text-purple-300 uppercase tracking-wide">Eligible</div>
-                <div className="text-2xl font-bold text-purple-200 mt-1">{preview.eligibleRecords.toLocaleString()}</div>
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-700/50 p-4">
-                <div className="text-xs font-medium text-slate-400 uppercase tracking-wide">Sheets</div>
-                <div className="text-2xl font-bold text-white mt-1">{preview.sheetNames.length}</div>
-              </div>
-              <div className="bg-slate-700/30 backdrop-blur-sm rounded-xl border border-slate-600/50 p-4">
-                <div className="text-xs font-medium text-slate-400 uppercase tracking-wide">Filtered</div>
-                <div className="text-2xl font-bold text-slate-300 mt-1">{(preview.totalRecords - preview.eligibleRecords).toLocaleString()}</div>
+              <div className="bg-white border border-line rounded-2xl overflow-hidden">
+                {rowsToFix.length === 0 ? (
+                  <div className="py-12 text-center text-muted">Nothing to fix. Every eligible row passed all checks.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[15px]">
+                      <thead>
+                        <tr className="border-b border-line">
+                          <th className="px-5 py-3.5 text-left text-sm font-medium text-muted">Reason</th>
+                          <th className="px-5 py-3.5 text-left text-sm font-medium text-muted">Donor</th>
+                          <th className="px-5 py-3.5 text-left text-sm font-medium text-muted">House</th>
+                          <th className="px-5 py-3.5 text-left text-sm font-medium text-muted">Postcode</th>
+                          <th className="px-5 py-3.5 text-right text-sm font-medium text-muted">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rowsToFix.slice(0, fixLimit).map((item, idx) => (
+                          <tr key={idx} className="border-b border-line last:border-0">
+                            <td className="px-5 py-4">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(item.reasons ?? []).map(r => <Pill key={r} tone="bad">{r}</Pill>)}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 font-bold text-ink">
+                              {[item.processed.Title, item.processed['First Name'], item.processed['Last Name']].filter(Boolean).join(' ') || '—'}
+                            </td>
+                            <td className="px-5 py-4 text-ink max-w-[220px] truncate">{item.processed.Address || '—'}</td>
+                            <td className="px-5 py-4 text-ink whitespace-nowrap">{item.processed.Postcode || '—'}</td>
+                            <td className="px-5 py-4 text-right text-ink whitespace-nowrap">{money(Number(item.processed['Donation Amount'] || 0))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {rowsToFix.length > fixLimit && (
+                  <div className="border-t border-line px-5 py-3 flex items-center justify-between text-sm">
+                    <span className="text-muted">Showing {fixLimit} of {rowsToFix.length.toLocaleString()}</span>
+                    <Button variant="outline" size="sm" onClick={() => setFixLimit(l => l + 50)}>Show 50 more</Button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Preview Table - Transformed Data Only */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden">
-              <div className="px-5 py-4 bg-slate-800/80 border-b border-slate-700/50 flex items-center justify-between">
+            {/* Output preview (collapsed by default) */}
+            <div className="bg-white border border-line rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setShowOutput(o => !o)}
+                className="w-full px-5 py-4 flex items-center justify-between text-left cursor-pointer hover:bg-wash/60"
+              >
                 <div>
-                  <h3 className="font-semibold text-white">Output Preview</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">How your data will look after processing</p>
+                  <h3 className="font-display text-lg font-semibold text-ink">Preview all rows</h3>
+                  <p className="text-sm text-muted">How every eligible row will look in the output</p>
                 </div>
-                {(() => {
-                  const eligibleRecords = preview.beforeAfter.filter(i => i.processed !== null)
-                  const totalPages = Math.ceil(eligibleRecords.length / recordsPerPage)
-                  const startIdx = (previewPage - 1) * recordsPerPage
-                  const endIdx = Math.min(startIdx + recordsPerPage, eligibleRecords.length)
-
-                  return (
-                    <div className="flex items-center gap-4">
+                <ChevronRight className={`w-5 h-5 text-muted transition-transform ${showOutput ? 'rotate-90' : ''}`} />
+              </button>
+              {showOutput && (() => {
+                const totalPages = Math.max(1, Math.ceil(eligibleItems.length / recordsPerPage))
+                const startIdx = (previewPage - 1) * recordsPerPage
+                const endIdx = Math.min(startIdx + recordsPerPage, eligibleItems.length)
+                return (
+                  <>
+                    <div className="px-5 py-3 border-t border-line flex flex-wrap items-center justify-end gap-4 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">Show</span>
+                        <span className="text-muted">Show</span>
                         <select
                           value={recordsPerPage}
-                          onChange={(e) => {
-                            setRecordsPerPage(Number(e.target.value))
-                            setPreviewPage(1)
-                          }}
-                          className="h-8 px-2 text-sm border border-slate-600 rounded-md bg-slate-700 text-white"
+                          onChange={(e) => { setRecordsPerPage(Number(e.target.value)); setPreviewPage(1) }}
+                          className="h-9 px-3 rounded-full border border-line bg-white text-ink"
                         >
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={30}>30</option>
-                          <option value={50}>50</option>
+                          {[10, 20, 30, 50].map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
                       </div>
-                      <span className="text-sm text-slate-300">
-                        {startIdx + 1}-{endIdx} of {eligibleRecords.length}
-                      </span>
-                      {totalPages > 1 && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
-                            disabled={previewPage === 1}
-                            className="h-8 w-8 p-0 border-slate-600 bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </Button>
-                          <span className="text-sm text-slate-300 px-2 min-w-[60px] text-center">
-                            {previewPage} / {totalPages}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))}
-                            disabled={previewPage === totalPages}
-                            className="h-8 w-8 p-0 border-slate-600 bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
+                      <span className="text-muted">{eligibleItems.length ? startIdx + 1 : 0}-{endIdx} of {eligibleItems.length.toLocaleString()}</span>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="outline" onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage === 1}>
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="px-2 min-w-[60px] text-center text-muted">{previewPage} / {totalPages}</span>
+                        <Button size="icon" variant="outline" onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage === totalPages}>
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  )
-                })()}
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm table-fixed">
-                  <thead>
-                    <tr className="bg-slate-700/50 border-b border-slate-600/50">
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[50px]">#</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[60px]">Title</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[120px]">First Name</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[120px]">Last Name</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[200px]">Address</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[90px]">Postcode</th>
-                      <th className="px-3 py-3 text-left font-semibold text-slate-300 w-[100px]">Date</th>
-                      <th className="px-3 py-3 text-right font-semibold text-slate-300 w-[90px]">Amount</th>
-                      <th className="px-3 py-3 text-center font-semibold text-slate-300 w-[80px]">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const eligibleRecords = preview.beforeAfter.filter(item => item.processed !== null)
-                      const startIdx = (previewPage - 1) * recordsPerPage
-                      const endIdx = startIdx + recordsPerPage
-                      const pageRecords = eligibleRecords.slice(startIdx, endIdx)
-
-                      return pageRecords.map((item, idx) => {
-                        const actualIdx = startIdx + idx
-                        return (
-                          <tr key={`record - ${actualIdx} `} className={idx % 2 === 0 ? 'bg-slate-800/30' : 'bg-slate-800/50'}>
-                            <td className="px-3 py-2.5 text-slate-400 font-medium">{actualIdx + 1}</td>
-                            <td className="px-3 py-2.5 text-slate-200">{item.processed.Title}</td>
-                            <td className="px-3 py-2.5 text-slate-200 truncate">{item.processed['First Name']}</td>
-                            <td className="px-3 py-2.5 text-slate-200 truncate">{item.processed['Last Name']}</td>
-                            <td className="px-3 py-2.5 text-slate-200 truncate">{item.processed.Address || '—'}</td>
-                            <td className="px-3 py-2.5 text-slate-200 font-mono text-xs">{item.processed.Postcode || '—'}</td>
-                            <td className="px-3 py-2.5 text-slate-200">{item.processed['Donation Date'] || '—'}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-200 font-medium">£{Number(item.processed['Donation Amount'] || 0).toFixed(2)}</td>
-                            <td className="px-3 py-2.5 text-center">
-                              {item.isValid ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OK</span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">Review</span>
-                              )}
-                            </td>
+                    <div className="overflow-x-auto border-t border-line">
+                      <table className="w-full text-sm table-fixed">
+                        <thead>
+                          <tr className="border-b border-line bg-wash">
+                            {['#', 'Title', 'First name', 'Last name', 'House', 'Postcode', 'Date', 'Amount', 'Status'].map((h, i) => (
+                              <th key={h} className={`px-3 py-3 font-medium text-muted ${i === 7 ? 'text-right' : i === 8 ? 'text-center' : 'text-left'} ${i === 0 ? 'w-[50px]' : ''}`}>{h}</th>
+                            ))}
                           </tr>
-                        )
-                      })
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-5 py-3 bg-slate-800/80 border-t border-slate-700/50 flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OK</span>
-                  <span className="text-slate-400">Ready for HMRC</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">Review</span>
-                  <span className="text-slate-400">Needs manual check</span>
-                </div>
-                <div className="ml-auto text-slate-400">
-                  {preview.beforeAfter.filter(i => i.processed !== null).length} records • {preview.beforeAfter.filter(i => i.processed === null).length} filtered out
-                </div>
-              </div>
+                        </thead>
+                        <tbody>
+                          {eligibleItems.slice(startIdx, startIdx + recordsPerPage).map((item, idx) => (
+                            <tr key={startIdx + idx} className="border-b border-line last:border-0">
+                              <td className="px-3 py-2.5 text-muted">{startIdx + idx + 1}</td>
+                              <td className="px-3 py-2.5 text-ink">{item.processed.Title}</td>
+                              <td className="px-3 py-2.5 text-ink truncate">{item.processed['First Name']}</td>
+                              <td className="px-3 py-2.5 text-ink truncate">{item.processed['Last Name']}</td>
+                              <td className="px-3 py-2.5 text-ink truncate">{item.processed.Address || '—'}</td>
+                              <td className="px-3 py-2.5 text-ink whitespace-nowrap">{item.processed.Postcode || '—'}</td>
+                              <td className="px-3 py-2.5 text-ink">{item.processed['Donation Date'] || '—'}</td>
+                              <td className="px-3 py-2.5 text-right text-ink">{money(Number(item.processed['Donation Amount'] || 0))}</td>
+                              <td className="px-3 py-2.5 text-center">{item.isValid ? <Pill tone="good">OK</Pill> : <Pill tone="warn">Review</Pill>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           </>
         )}
 
-        {/* Error */}
+        {/* ---------- Error ---------- */}
         {error && (
-          <div className="bg-rose-500/10 backdrop-blur-sm border-2 border-rose-500/30 rounded-2xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-rose-400" />
-              </div>
-              <div>
-                <div className="font-semibold text-rose-300">Error</div>
-                <p className="text-sm text-rose-200">{error}</p>
-              </div>
+          <div className="rounded-2xl border border-bad/20 bg-bad-soft p-5 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-bad flex-shrink-0" />
+            <div>
+              <div className="font-semibold text-bad">Something went wrong</div>
+              <p className="text-sm text-bad/90">{error}</p>
             </div>
           </div>
         )}
 
-        {/* Results */}
+        {/* ---------- Results ---------- */}
         {result && (
           <>
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg shadow-purple-500/30">
-                    3
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Processing Complete!</h2>
-                    <p className="text-sm text-slate-400">Your files are ready to download</p>
-                  </div>
+            <div className="bg-white border border-line rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-good-soft flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-good" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={exportAnalyticsToPDF}
-                    variant="outline"
-                    size="sm"
-                    className="border-purple-500/50 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 hover:text-purple-200"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Export Report
-                  </Button>
-                  <Button
-                    onClick={handleReset}
-                    size="sm"
-                    className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Process Another File
-                  </Button>
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                <div>
+                  <h2 className="font-display text-2xl font-semibold text-ink">Claim saved</h2>
+                  <p className="text-muted">Your files are ready to download.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={exportAnalyticsToPDF}>
+                  <FileText className="w-4 h-4" /> Export report
+                </Button>
+                <Button variant="dark" onClick={handleReset}>
+                  <RotateCcw className="w-4 h-4" /> Clean another file
+                </Button>
+              </div>
+            </div>
+
+            <div ref={analyticsRef} className="grid grid-cols-2 lg:grid-cols-5 gap-5">
+              <StatTile label="Rows uploaded" value={result.totalRecords.toLocaleString()} />
+              <StatTile label="Eligible" tone="brand" value={result.eligibleRecords.toLocaleString()} />
+              <StatTile label="Skipped" value={result.filteredRecords.toLocaleString()} caption="Not Gift Aid" />
+              <StatTile label="Ready for HMRC" tone="good" value={result.validRecords.toLocaleString()} />
+              <StatTile label="To fix" tone="bad" value={result.invalidRecords.toLocaleString()} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <StatTile label="Total donations" value={money(result.totalAmountReviewed)} caption="All eligible rows" />
+              <StatTile label="In the HMRC files" value={money(result.totalGiftAidValue)} caption="Rows that passed every check" />
+              <StatTile label="Gift Aid to reclaim (25%)" tone="good" value={money(result.totalGiftAidValue * 0.25)} />
+            </div>
+
+            {saveError && (
+              <div className="rounded-2xl border border-bad/20 bg-bad-soft p-5 flex gap-3 text-sm text-bad">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div>
+                  <div className="font-semibold">Claims were not saved</div>
+                  Your files below are fine, but this upload will not appear in Claims or Search ({saveError}). Process the file again once the problem is fixed.
+                </div>
+              </div>
+            )}
+
+            {saved && (
+              <div className="bg-white border border-line rounded-2xl p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="font-display text-xl font-semibold text-ink">Claims created</h3>
+                    <span className="text-muted">all start as Pending</span>
+                  </div>
+                  <Link href="/claims" className="font-semibold text-brand hover:underline">Open Claims &rarr;</Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {saved.claims.map(c => (
+                    <Link
+                      key={c.id}
+                      href={`/claims/${c.id}`}
+                      className="flex items-center justify-between rounded-xl border border-line px-5 py-4 hover:bg-wash transition-colors"
+                    >
+                      <div>
+                        <div className="font-bold text-ink">{c.ref}</div>
+                        <div className="text-sm text-muted">{c.donationCount.toLocaleString()} donations</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-display text-xl font-bold text-ink">{money(c.totalAmount)}</div>
+                        <div className="text-sm text-good">{money(c.totalAmount * 0.25)} Gift Aid</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {saved.duplicates.count > 0 && (
+                  <div className="mt-4 p-4 bg-warn-soft rounded-xl text-sm text-warn flex gap-3">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <div>
+                      <span className="font-semibold">
+                        {saved.duplicates.count.toLocaleString()} donation{saved.duplicates.count === 1 ? '' : 's'}
+                      </span>{' '}
+                      in this upload already appear in earlier claims ({saved.duplicates.claimRefs.join(', ')}). Check you are not claiming Gift Aid on them twice.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Downloads */}
+            <div className="bg-white border border-line rounded-2xl p-6 space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="font-display text-xl font-semibold text-ink">Download files</h3>
+                <Button onClick={downloadAll}><Download className="w-4 h-4" /> Download all</Button>
+              </div>
+
+              <div>
+                <div className="font-semibold text-ink">HMRC schedules</div>
+                <p className="text-sm text-muted mb-3">The official HMRC template with your data from row 25. Up to 1,000 donations per file; the amount in each name is its total.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {downloadUrls.hmrcFiles.map((f, i) => (
+                    <Button key={i} variant="outline" className="justify-start h-auto py-3 whitespace-normal text-left" onClick={() => downloadFile(f.url, f.name)}>
+                      <FileSpreadsheet className="w-4 h-4 flex-shrink-0 text-good" />
+                      {f.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="font-semibold text-ink">Review package</div>
+                  <p className="text-sm text-muted mb-3">cleaned_data.xlsx: correct data, rows to fix (with reasons), skipped rows and every auto-fix.</p>
+                  {downloadUrls.cleanedData && (
+                    <Button variant="outline" className="justify-start" onClick={() => downloadFile(downloadUrls.cleanedData!, 'cleaned_data.xlsx')}>
+                      <FileSpreadsheet className="w-4 h-4 text-info" /> cleaned_data.xlsx
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-ink">Simple output sheets</div>
+                  <p className="text-sm text-muted mb-3">Plain spreadsheets of the clean data, for backup or further work.</p>
+                  <div className="flex flex-col gap-2">
+                    {downloadUrls.outputFiles.map((f, i) => (
+                      <Button key={i} variant="outline" className="justify-start h-auto py-3 whitespace-normal text-left" onClick={() => downloadFile(f.url, f.name)}>
+                        <FileSpreadsheet className="w-4 h-4 flex-shrink-0 text-info" />
+                        {f.name}
+                      </Button>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div ref={analyticsRef} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-6">
-              <div className="grid grid-cols-5 gap-4">
-                <div className="bg-slate-700/30 rounded-xl p-4">
-                  <div className="text-xs font-medium text-slate-400 uppercase tracking-wide">Total</div>
-                  <div className="text-2xl font-bold text-white mt-1">{result.totalRecords.toLocaleString()}</div>
-                </div>
-                <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-purple-500/30 p-4">
-                  <div className="text-xs font-medium text-purple-300 uppercase tracking-wide">Eligible</div>
-                  <div className="text-2xl font-bold text-purple-200 mt-1">{result.eligibleRecords.toLocaleString()}</div>
-                </div>
-                <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/50">
-                  <div className="text-xs font-medium text-slate-400 uppercase tracking-wide">Filtered</div>
-                  <div className="text-2xl font-bold text-slate-300 mt-1">{result.filteredRecords.toLocaleString()}</div>
-                </div>
-                <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/30 p-4">
-                  <div className="text-xs font-medium text-emerald-300 uppercase tracking-wide">Valid</div>
-                  <div className="text-2xl font-bold text-emerald-200 mt-1">{result.validRecords.toLocaleString()}</div>
-                </div>
-                <div className="bg-amber-500/10 rounded-xl border border-amber-500/30 p-4">
-                  <div className="text-xs font-medium text-amber-300 uppercase tracking-wide">Review</div>
-                  <div className="text-2xl font-bold text-amber-200 mt-1">{result.invalidRecords.toLocaleString()}</div>
-                </div>
+            {/* What was fixed */}
+            <div className="bg-white border border-line rounded-2xl p-6">
+              <h3 className="font-display text-xl font-semibold text-ink mb-4">What we fixed</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-5">
+                {[
+                  ['Titles assigned', result.analytics.titlesFilled],
+                  ['Names fixed', result.analytics.namesFixed],
+                  ['Names from email', result.analytics.namesSplitFromEmail],
+                  ['Postcodes corrected', result.analytics.postcodesCorrected],
+                  ['Dates formatted', result.analytics.datesFormatted],
+                  ['Addresses shortened', result.analytics.addressesShortened],
+                  ['Symbols cleaned', result.analytics.symbolsCleaned],
+                  ['Cells changed in total', result.analytics.totalCellsModified],
+                ].map(([label, value]) => (
+                  <div key={label as string}>
+                    <div className="font-display text-3xl font-bold text-ink">{(value as number).toLocaleString()}</div>
+                    <div className="text-sm text-muted">{label}</div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Financial Summary Section */}
-              <div className="mt-6 p-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/30">
-                <div className="flex items-center gap-2 mb-4">
-                  <Coins className="w-5 h-5 text-emerald-400" />
-                  <span className="font-semibold text-white text-lg">Financial Summary</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Reviewed</div>
-                    <div className="text-2xl font-bold text-emerald-200">£{result.totalAmountReviewed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Gift Aid Value</div>
-                    <div className="text-2xl font-bold text-emerald-200">£{result.totalGiftAidValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  </div>
-                  <div className="bg-emerald-500/20 rounded-lg p-3 border border-emerald-500/30">
-                    <div className="text-xs text-emerald-300 uppercase tracking-wide mb-1">Estimated Reclaimable (25%)</div>
-                    <div className="text-2xl font-bold text-emerald-100">£{(result.totalGiftAidValue * 0.25).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  </div>
-                </div>
+            {/* HMRC template preview */}
+            <div className="bg-white border border-line rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-line flex items-baseline justify-between">
+                <h3 className="font-display text-xl font-semibold text-ink">HMRC schedule preview</h3>
+                <span className="text-sm text-muted">first 3 rows, starting at row 25</span>
               </div>
-
-              {/* Data Quality Section */}
-              <div className="mt-6 p-5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-500/30">
-                <div className="flex items-center gap-2 mb-4">
-                  <ShieldCheck className="w-5 h-5 text-amber-400" />
-                  <span className="font-semibold text-white text-lg">Data Quality Check</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-800/50 rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Records needing attention</div>
-                      <div className="text-2xl font-bold text-amber-200">{result.invalidRecords.toLocaleString()}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Valid Records</div>
-                      <div className="text-xl font-semibold text-emerald-200">{result.validRecords.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Compliance Rate</div>
-                      <div className="text-2xl font-bold text-amber-200">
-                        {result.eligibleRecords > 0 ? Math.round((result.validRecords / result.eligibleRecords) * 100) : 100}%
-                      </div>
-                    </div>
-                    <div className="w-16 h-16 relative flex items-center justify-center">
-                      <svg className="w-full h-full" viewBox="0 0 36 36">
-                        <path className="text-slate-700" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3" />
-                        <path className="text-amber-500" strokeDasharray={`${result.eligibleRecords > 0 ? (result.validRecords / result.eligibleRecords) * 100 : 100}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Analytics Section */}
-              <div className="mt-6 p-5 bg-gradient-to-br from-purple-500/10 to-violet-500/10 rounded-xl border border-purple-500/30">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                  <span className="font-semibold text-white text-lg">Processing Details</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Titles Assigned</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.titlesFilled.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Names Fixed</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.namesFixed.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Names from Email</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.namesSplitFromEmail.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Postcodes Corrected</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.postcodesCorrected.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Dates Formatted</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.datesFormatted.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Addresses Shortened</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.addressesShortened.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Symbols Cleaned</div>
-                    <div className="text-2xl font-bold text-purple-200">{result.analytics.symbolsCleaned.toLocaleString()}</div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-purple-500/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300">Total Cells Modified</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-purple-300 to-violet-300 bg-clip-text text-transparent">
-                      {result.analytics.totalCellsModified.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Saved Claims */}
-              {saveError && (
-                <div className="mt-6 p-4 bg-red-500/10 rounded-xl border border-red-500/30 text-sm text-red-200 flex gap-3">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
-                  <div>
-                    <div className="font-semibold text-red-100">Claims were not saved</div>
-                    Your files below are fine, but this upload will not appear in Claims or Donor Search ({saveError}).
-                    Process the file again once the problem is fixed.
-                  </div>
-                </div>
-              )}
-              {saved && (
-                <div className="mt-6 p-5 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-purple-500/30">
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-purple-400" />
-                      <span className="font-semibold text-white text-lg">Claims Created</span>
-                      <span className="text-sm text-slate-400">all start as Pending</span>
-                    </div>
-                    <Link href="/claims" className="text-sm font-medium text-purple-300 hover:text-purple-200">
-                      Open Claims tracker &rarr;
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {saved.claims.map(c => (
-                      <Link
-                        key={c.id}
-                        href={`/claims/${c.id}`}
-                        className="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-3 hover:bg-slate-800 transition-colors"
-                      >
-                        <div>
-                          <div className="font-mono font-semibold text-white">{c.ref}</div>
-                          <div className="text-xs text-slate-400">{c.donationCount.toLocaleString()} donations</div>
-                        </div>
-                        <div className="text-lg font-bold text-purple-200">
-                          £{c.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                  {saved.duplicates.count > 0 && (
-                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-200 flex gap-3">
-                      <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-400" />
-                      <div>
-                        <span className="font-semibold text-amber-100">
-                          {saved.duplicates.count.toLocaleString()} donation{saved.duplicates.count === 1 ? '' : 's'}
-                        </span>{' '}
-                        in this upload already appear in earlier claims ({saved.duplicates.claimRefs.join(', ')}).
-                        Check you are not claiming Gift Aid on them twice.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Download Files Section */}
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Download className="w-5 h-5 text-purple-400" />
-                    <span className="font-semibold text-white text-lg">Download Files</span>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
-                      const downloadFile = (url: string, name: string) => {
-                        const link = document.createElement('a')
-                        link.href = url
-                        link.download = name
-                        link.click()
-                      }
-                      const downloadAll = async () => {
-                        if (downloadUrls.cleanedData) {
-                          downloadFile(downloadUrls.cleanedData, 'cleaned_data.xlsx')
-                          await delay(300)
-                        }
-                        for (const file of downloadUrls.hmrcFiles) {
-                          downloadFile(file.url, file.name)
-                          await delay(300)
-                        }
-                        for (const file of downloadUrls.outputFiles) {
-                          downloadFile(file.url, file.name)
-                          await delay(300)
-                        }
-                      }
-                      downloadAll()
-                    }}
-                    size="sm"
-                    className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-purple-500/20"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download All Files
-                  </Button>
-                </div>
-
-                {/* Cleaned Data File */}
-                <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/30 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Analysis & Review Package</h4>
-                      <p className="text-sm text-emerald-300">cleaned_data.xlsx — 3 sheets inside</p>
-                    </div>
-                    {downloadUrls.cleanedData && (
-                      <Button
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = downloadUrls.cleanedData!
-                          link.download = 'cleaned_data.xlsx'
-                          link.click()
-                        }}
-                        size="sm"
-                        variant="outline"
-                        className="border-emerald-400/50 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                    <div className="bg-slate-800/40 rounded-lg p-2.5 border border-slate-600/30">
-                      <div className="text-xs text-emerald-300 font-medium mb-0.5">Correct Data</div>
-                      <div className="text-xs text-slate-400">All processed records ready for HMRC submission</div>
-                    </div>
-                    <div className="bg-slate-800/40 rounded-lg p-2.5 border border-slate-600/30">
-                      <div className="text-xs text-emerald-300 font-medium mb-0.5">Needs Review</div>
-                      <div className="text-xs text-slate-400">Records with missing data for manual verification</div>
-                    </div>
-                    <div className="bg-slate-800/40 rounded-lg p-2.5 border border-slate-600/30">
-                      <div className="text-xs text-emerald-300 font-medium mb-0.5">Auto-Fixed Records</div>
-                      <div className="text-xs text-slate-400">All records with automated fixes highlighted in green</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* HMRC Template Files */}
-                <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-purple-500/30 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">HMRC Submission Files</h4>
-                      <p className="text-sm text-purple-300">Official HMRC template with your data inserted at Row 25, Column C</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                    {downloadUrls.hmrcFiles.map((file, idx) => (
-                      <Button
-                        key={idx}
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = file.url
-                          link.download = file.name
-                          link.click()
-                        }}
-                        size="sm"
-                        variant="outline"
-                        className="border-purple-400/50 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 justify-start"
-                      >
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                        {file.name}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-purple-300/70">
-                    Complete HMRC template with all original formatting preserved. Up to 1000 records per file.
-                  </p>
-                </div>
-
-                {/* Output Sheets */}
-                <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-xl border border-cyan-500/30 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Simple Output Sheets</h4>
-                      <p className="text-sm text-cyan-300">Clean data split into chunks of 1000 rows for easy handling</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                    {downloadUrls.outputFiles.map((file, idx) => (
-                      <Button
-                        key={idx}
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = file.url
-                          link.download = file.name
-                          link.click()
-                        }}
-                        size="sm"
-                        variant="outline"
-                        className="border-cyan-400/50 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 justify-start"
-                      >
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                        {file.name}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-cyan-300/70">
-                    Simple spreadsheet format without template. Perfect for backup or further processing.
-                  </p>
-                </div>
-              </div>
-
-              {/* HMRC Template Preview */}
-              <div className="mt-6 p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-xl border border-cyan-500/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
-                  <span className="font-semibold text-white">HMRC Template Preview</span>
-                  <span className="text-xs text-cyan-300 ml-auto">Sample of first 3 records</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-700/50 border-b border-cyan-500/30">
-                        <th className="px-2 py-2 text-left text-slate-400 font-medium w-12">Row</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col C<br />Title</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col D<br />First name</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col E<br />Last name</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col F<br />House name/number</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col G<br />Postcode</th>
-                        <th className="px-2 py-2 text-left text-slate-400 font-medium">Col H<br />Aggregated</th>
-                        <th className="px-2 py-2 text-left text-slate-400 font-medium">Col I<br />Sponsored</th>
-                        <th className="px-2 py-2 text-left text-cyan-300 font-medium">Col J<br />Date</th>
-                        <th className="px-2 py-2 text-right text-cyan-300 font-medium">Col K<br />Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preview && preview.beforeAfter.slice(0, 3).filter(item => item.processed).map((item, idx) => (
-                        <tr key={idx} className="border-b border-slate-700/50">
-                          <td className="px-2 py-2 text-slate-400">{25 + idx}</td>
-                          <td className="px-2 py-2 text-slate-200">{item.processed?.Title || ''}</td>
-                          <td className="px-2 py-2 text-slate-200">{item.processed?.['First Name'] || ''}</td>
-                          <td className="px-2 py-2 text-slate-200">{item.processed?.['Last Name'] || ''}</td>
-                          <td className="px-2 py-2 text-slate-200">{item.processed?.Address || ''}</td>
-                          <td className="px-2 py-2 text-slate-200 font-mono">{item.processed?.Postcode || ''}</td>
-                          <td className="px-2 py-2 text-slate-500 italic">empty</td>
-                          <td className="px-2 py-2 text-slate-500 italic">empty</td>
-                          <td className="px-2 py-2 text-slate-200">{item.processed?.['Donation Date'] || ''}</td>
-                          <td className="px-2 py-2 text-right text-slate-200">£{Number(item.processed?.['Donation Amount'] || 0).toFixed(2)}</td>
-                        </tr>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-line bg-wash text-muted">
+                      {['Row', 'Title', 'First name', 'Last name', 'House name or number', 'Postcode', 'Aggregated', 'Sponsored', 'Date', 'Amount'].map((h, i) => (
+                        <th key={h} className={`px-4 py-3 font-medium ${i === 9 ? 'text-right' : 'text-left'}`}>{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-3 text-xs text-cyan-300/70">
-                  Your data is inserted starting at Row 25, Column C in the HMRC template. Rows 1-24 contain the original HMRC form headers and instructions (preserved exactly as in template).
-                </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview && preview.beforeAfter.filter(i => i.processed && i.isValid).slice(0, 3).map((item, idx) => (
+                      <tr key={idx} className="border-b border-line last:border-0">
+                        <td className="px-4 py-3 text-muted">{25 + idx}</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.Title || ''}</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.['First Name'] || ''}</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.['Last Name'] || ''}</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.Address || ''}</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.Postcode || ''}</td>
+                        <td className="px-4 py-3 text-muted italic">empty</td>
+                        <td className="px-4 py-3 text-muted italic">empty</td>
+                        <td className="px-4 py-3 text-ink">{item.processed?.['Donation Date'] || ''}</td>
+                        <td className="px-4 py-3 text-right text-ink">{money(Number(item.processed?.['Donation Amount'] || 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }

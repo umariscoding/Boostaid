@@ -1,26 +1,49 @@
 @import "tailwindcss";
 
+/* Light theme only. Tokens follow the BoostAid dashboard design. */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #161628;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-ink: #161628;
+  --color-muted: #66667c;
+  --color-line: #e7e5ee;
+  --color-wash: #faf9fd;
+
+  --color-brand: #4a2bb3;
+  --color-brand-dark: #3b2194;
+  --color-brand-soft: #f1edff;
+
+  --color-side: #14141f;
+  --color-side-active: #25253a;
+  --color-side-muted: #8d8da3;
+
+  --color-good: #2b6b3f;
+  --color-good-soft: #e4f3e8;
+  --color-info: #2547a6;
+  --color-info-soft: #e6ecfb;
+  --color-bad: #9a2b1d;
+  --color-bad-soft: #fbe8e5;
+  --color-warn: #7a4a05;
+  --color-warn-soft: #fdf1d9;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }

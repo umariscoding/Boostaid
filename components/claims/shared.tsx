@@ -1,4 +1,5 @@
 import type { ClaimDto } from '@/lib/claims'
+import { Pill } from '@/components/ui/primitives'
 
 export type Status = ClaimDto['status']
 
@@ -16,19 +17,32 @@ export const fmtDay = (iso: string | null) =>
 /** yyyy-MM-dd (a plain date, no timezone) -> dd/MM/yyyy */
 export const fmtPlainDate = (d: string | null) => (d ? d.split('-').reverse().join('/') : '-')
 
-const STYLES: Record<Status, string> = {
-  pending: 'bg-amber-500/15 text-amber-200 border-amber-500/30',
-  submitted: 'bg-sky-500/15 text-sky-200 border-sky-500/30',
-  received: 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30',
+/** "Oct - Nov 2026", "Jul 2026", or "Dec 2025 - Jan 2026" for a claim's donation dates. */
+export function fmtPeriod(from?: string | null, to?: string | null): string {
+  if (!from) return '-'
+  const f = new Date(from + 'T00:00:00Z')
+  const t = new Date((to ?? from) + 'T00:00:00Z')
+  const month = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })
+  const year = (d: Date) => d.getUTCFullYear()
+  if (f.getUTCFullYear() === t.getUTCFullYear() && f.getUTCMonth() === t.getUTCMonth()) return `${month(f)} ${year(f)}`
+  if (year(f) === year(t)) return `${month(f)} – ${month(t)} ${year(f)}`
+  return `${month(f)} ${year(f)} – ${month(t)} ${year(t)}`
 }
-const LABELS: Record<Status, string> = { pending: 'Pending', submitted: 'Submitted', received: 'Received' }
+
+export const STATUS_LABEL: Record<Status, string> = {
+  pending: 'Pending',
+  submitted: 'Submitted',
+  received: 'Received',
+}
+
+const STATUS_TONE: Record<Status, 'warn' | 'info' | 'good'> = {
+  pending: 'warn',
+  submitted: 'info',
+  received: 'good',
+}
 
 export function StatusBadge({ status }: { status: Status }) {
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${STYLES[status]}`}>
-      {LABELS[status]}
-    </span>
-  )
+  return <Pill tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Pill>
 }
 
 export const NEXT_STATUS: Record<Status, { to: Status; label: string } | null> = {
@@ -53,8 +67,3 @@ export async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`)
   return data as T
 }
-
-export const cardClass =
-  'bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50'
-export const inputClass =
-  'w-full h-10 px-3 rounded-lg bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50'

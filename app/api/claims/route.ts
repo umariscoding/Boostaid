@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { desc, eq, inArray, sql } from 'drizzle-orm'
-import { batches, claims, getDb } from '@/lib/db'
+import { batches, claims, donations, getDb } from '@/lib/db'
 import { withAuth } from '@/lib/api'
 import { toClaimDto } from '@/lib/claims'
 
@@ -32,7 +32,12 @@ export const GET = withAuth(async (req) => {
   if (summaryOnly) return NextResponse.json({ summary })
 
   const rows = await db
-    .select({ claim: claims, filename: batches.filename })
+    .select({
+      claim: claims,
+      filename: batches.filename,
+      periodFrom: sql<string | null>`(select min(${donations.donationDate})::text from ${donations} where ${donations.claimId} = ${claims.id})`,
+      periodTo: sql<string | null>`(select max(${donations.donationDate})::text from ${donations} where ${donations.claimId} = ${claims.id})`,
+    })
     .from(claims)
     .innerJoin(batches, eq(batches.id, claims.batchId))
     .where(where)
@@ -40,7 +45,7 @@ export const GET = withAuth(async (req) => {
     .limit(1000)
 
   return NextResponse.json({
-    claims: rows.map((r) => toClaimDto(r.claim, r.filename)),
+    claims: rows.map((r) => toClaimDto(r.claim, r.filename, { from: r.periodFrom, to: r.periodTo })),
     summary,
   })
 })

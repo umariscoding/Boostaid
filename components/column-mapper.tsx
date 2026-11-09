@@ -232,26 +232,26 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
 
   const usedColumns = getUsedColumns()
 
+  const requiredCount = REQUIRED_COLUMNS.filter(c => c.required).length
+  const mappedCount = Object.keys(mapping).filter(k => REQUIRED_COLUMNS.find(c => c.key === k && c.required) && mapping[k]).length
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg shadow-purple-500/30">1</div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Map Your Columns</h2>
-              <p className="text-sm text-slate-400">Drag column headers onto the target boxes below</p>
-            </div>
+      <div className="bg-white border border-line rounded-2xl p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-ink">Map your columns</h2>
+            <p className="text-muted mt-1">Drag column headers from the table below onto the matching boxes, or let us detect them.</p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={handleAutoMap} variant="outline" size="sm" className="h-9 border-slate-600 bg-slate-700 text-white hover:bg-slate-600">
-              <RotateCcw className="w-4 h-4 mr-2" />
+            <Button onClick={handleAutoMap} variant="outline">
+              <RotateCcw className="w-4 h-4" />
               Auto-Detect
             </Button>
-            <Button onClick={handleComplete} disabled={!isComplete()} size="sm" className="h-9 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0">
-              <Check className="w-4 h-4 mr-2" />
-              Continue ({Object.keys(mapping).filter(k => REQUIRED_COLUMNS.find(c => c.key === k && c.required) && mapping[k]).length}/{REQUIRED_COLUMNS.filter(c => c.required).length})
+            <Button onClick={handleComplete} disabled={!isComplete()}>
+              <Check className="w-4 h-4" />
+              Continue ({mappedCount}/{requiredCount})
             </Button>
           </div>
         </div>
@@ -264,7 +264,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
           const isMapped = mappedValue && (Array.isArray(mappedValue) ? mappedValue.length > 0 : true)
           const mappedArray = Array.isArray(mappedValue) ? mappedValue : mappedValue ? [mappedValue] : []
           const isHovering = dragOverTarget === col.key && draggedColumn
-          
+
           return (
             <div
               key={col.key}
@@ -272,43 +272,43 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
               onDragLeave={handleDragLeave}
               onDrop={() => handleDrop(col.key)}
               style={{ gridColumn: index < 5 ? 'span 4' : 'span 5' }}
-              className={`p-4 rounded-xl border-2 border-dashed min-h-[100px] transition-all duration-200 ease-out ${
+              className={`p-4 rounded-2xl border-2 border-dashed min-h-[110px] transition-all duration-200 ease-out ${
                 isHovering
-                  ? 'border-purple-400 bg-purple-500/20 scale-[1.02] shadow-lg shadow-purple-500/20 ring-2 ring-purple-400/50'
-                  : isMapped 
-                    ? 'border-purple-500/50 bg-purple-500/10' 
+                  ? 'border-brand bg-brand-soft scale-[1.02] ring-2 ring-brand/20'
+                  : isMapped
+                    ? 'border-brand/40 bg-brand-soft/60'
                     : draggedColumn
-                      ? 'border-purple-400/40 bg-purple-500/5'
-                      : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+                      ? 'border-brand/40 bg-wash'
+                      : 'border-line bg-white hover:border-brand/30'
               }`}
             >
-              <div className="text-sm font-semibold text-white mb-2">
+              <div className="text-sm font-semibold text-ink mb-2">
                 {col.key}
-                {col.required && <span className="text-rose-400 ml-1">*</span>}
+                {col.required && <span className="text-bad ml-1">*</span>}
               </div>
-              
+
               {isMapped ? (
                 <div className="space-y-2">
                   {mappedArray.map((source, idx) => (
-                    <div key={idx} className="flex items-center gap-1 text-xs bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-purple-500/30">
-                      <span className="flex-1 font-medium text-purple-200 truncate" title={source}>{source}</span>
-                      <button onClick={() => handleRemoveMapping(col.key, source)} className="flex-shrink-0">
-                        <X className="w-3 h-3 text-slate-400 hover:text-rose-400" />
+                    <div key={idx} className="flex items-center gap-1 text-xs bg-white rounded-lg px-2.5 py-1.5 border border-brand/20">
+                      <span className="flex-1 font-medium text-brand truncate" title={source}>{source}</span>
+                      <button onClick={() => handleRemoveMapping(col.key, source)} className="flex-shrink-0 cursor-pointer">
+                        <X className="w-3 h-3 text-muted hover:text-bad" />
                       </button>
                     </div>
                   ))}
-                  
+
                   {col.key === 'Gift Aid' && giftAidValues.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-600">
-                      <div className="text-xs text-slate-400 mb-1.5">Keep values:</div>
+                    <div className="mt-2 pt-2 border-t border-brand/20">
+                      <div className="text-xs text-muted mb-1.5">Keep values:</div>
                       <div className="flex flex-wrap gap-1">
                         {giftAidValues.map(value => (
                           <label
                             key={value}
-                            className={`px-2 py-1 rounded-md text-xs cursor-pointer transition-colors ${
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
                               selectedGiftAidValues.includes(value)
-                                ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white'
-                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                ? 'bg-brand text-white'
+                                : 'bg-white border border-line text-muted hover:text-ink'
                             }`}
                           >
                             <input
@@ -331,7 +331,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-slate-500 mt-2">Drop column here</div>
+                <div className="text-xs text-muted mt-2">Drop column here</div>
               )}
             </div>
           )
@@ -339,15 +339,15 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
       </div>
 
       {/* Data Table */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden">
-        <div className="px-5 py-3 bg-slate-800/80 border-b border-slate-700/50 flex items-center justify-between">
-          <span className="font-semibold text-white">Your Data</span>
-          <span className="text-sm text-slate-400">{detectedColumns.length} columns preview</span>
+      <div className="bg-white border border-line rounded-2xl overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-line flex items-center justify-between">
+          <span className="font-display text-lg font-semibold text-ink">Your data</span>
+          <span className="text-sm text-muted">{detectedColumns.length} columns, first 10 rows</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-700/50 border-b border-slate-600/50">
+              <tr className="border-b border-line">
                 {detectedColumns.map((col) => {
                   const isUsed = usedColumns.has(col)
                   return (
@@ -356,18 +356,18 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                       draggable={!isUsed}
                       onDragStart={() => handleDragStart(col)}
                       onDragEnd={handleDragEnd}
-                      className={`px-3 py-2.5 text-left font-semibold whitespace-nowrap transition-colors ${
-                        isUsed 
-                          ? 'bg-purple-500/20 text-purple-200 cursor-not-allowed' 
+                      className={`px-3 py-3 text-left font-semibold whitespace-nowrap transition-colors ${
+                        isUsed
+                          ? 'bg-brand-soft text-brand cursor-not-allowed'
                           : draggedColumn === col
-                            ? 'bg-purple-500/30 text-purple-100 cursor-grabbing'
-                            : 'bg-slate-700/50 text-slate-300 cursor-grab hover:bg-slate-600/50'
+                            ? 'bg-brand-soft text-brand cursor-grabbing'
+                            : 'bg-wash text-ink cursor-grab hover:bg-brand-soft/60'
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
-                        {!isUsed && <GripVertical className="w-3.5 h-3.5 text-slate-500" />}
+                        {!isUsed && <GripVertical className="w-3.5 h-3.5 text-muted" />}
                         <span className="text-xs" title={col}>{col}</span>
-                        {isUsed && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                        {isUsed && <Check className="w-3.5 h-3.5 text-brand" />}
                       </div>
                     </th>
                   )
@@ -376,7 +376,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
             </thead>
             <tbody>
               {sampleData.slice(0, 10).map((row, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-800/30' : 'bg-slate-800/50'}>
+                <tr key={idx} className="border-b border-line last:border-0">
                   {detectedColumns.map((col) => {
                     const value = row[col]
                     let displayValue = value
@@ -389,9 +389,9 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                     } else {
                       displayValue = String(value || '')
                     }
-                    
+
                     return (
-                      <td key={col} className="px-3 py-2 text-slate-300 text-xs">
+                      <td key={col} className="px-3 py-2 text-ink text-xs max-w-[220px] truncate">
                         {displayValue}
                       </td>
                     )
@@ -404,24 +404,20 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
       </div>
 
       {/* Status Bar */}
-      <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${
-        isComplete() 
-          ? 'bg-purple-500/10 border-purple-500/30' 
-          : 'bg-slate-800/50 border-slate-600'
+      <div className={`flex items-center justify-between p-4 rounded-2xl border ${
+        isComplete() ? 'bg-brand-soft border-brand/30' : 'bg-wash border-line'
       }`}>
         <div className="flex items-center gap-2">
           {isComplete() ? (
-            <Check className="w-5 h-5 text-purple-400" />
+            <Check className="w-5 h-5 text-brand" />
           ) : (
-            <ArrowRight className="w-5 h-5 text-slate-400" />
+            <ArrowRight className="w-5 h-5 text-muted" />
           )}
-          <span className={`font-semibold ${isComplete() ? 'text-purple-200' : 'text-slate-300'}`}>
+          <span className={`font-semibold ${isComplete() ? 'text-brand' : 'text-ink'}`}>
             {isComplete() ? 'Ready to continue' : 'Map all required fields to continue'}
           </span>
         </div>
-        <span className={`text-sm ${isComplete() ? 'text-purple-300' : 'text-slate-400'}`}>
-          {Object.keys(mapping).filter(k => REQUIRED_COLUMNS.find(c => c.key === k && c.required) && mapping[k]).length} of {REQUIRED_COLUMNS.filter(c => c.required).length} required
-        </span>
+        <span className="text-sm text-muted">{mappedCount} of {requiredCount} required</span>
       </div>
     </div>
   )
