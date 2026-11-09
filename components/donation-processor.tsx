@@ -10,6 +10,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, Columns, Download, Eye, FileSp
 import ColumnMapper from './column-mapper'
 import { PageHeader, Pill, StatTile } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
+import { ReviewSkeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import { sanitizeRecords } from '@/lib/sanitize'
 import { extractHouse } from '@/lib/address'
@@ -69,6 +70,7 @@ export default function DonationProcessor() {
   const [progressTarget, setProgressTarget] = useState(0)
   const [processingProgress, setProcessingProgress] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [analysing, setAnalysing] = useState(false)
   const [previewPage, setPreviewPage] = useState(1)
   const [downloadUrls, setDownloadUrls] = useState<{
     cleanedData: string | null
@@ -634,8 +636,11 @@ export default function DonationProcessor() {
       setColumnMapping(null)
       setShowMapper(false)
       setLoading(true)
+      setPreview(null)
 
       try {
+        // Let the loading skeleton paint before the (synchronous) parsing starts
+        await new Promise(r => setTimeout(r, 30))
         const workbook = await readWorkbook(selectedFile)
 
         let allRecords: any[] = []
@@ -726,15 +731,25 @@ export default function DonationProcessor() {
 
     // Re-process ALL records for preview with mapping
     if (preview) {
-      const mappedRecords = preview.rawRecords.map(rec => applyColumnMapping(rec, mapping))
-      const allProcessed = mappedRecords.map(rec => processRecord(rec, updatedConfig, blankAnalytics()))
-      const eligibleCount = mappedRecords.filter(rec => isEligibleDonation(rec, updatedConfig)).length
+      setAnalysing(true)
+      // Let the loading skeleton paint before the (synchronous) per-row checks run
+      setTimeout(() => {
+        try {
+          const mappedRecords = preview.rawRecords.map(rec => applyColumnMapping(rec, mapping))
+          const allProcessed = mappedRecords.map(rec => processRecord(rec, updatedConfig, blankAnalytics()))
+          const eligibleCount = mappedRecords.filter(rec => isEligibleDonation(rec, updatedConfig)).length
 
-      setPreview({
-        ...preview,
-        eligibleRecords: eligibleCount,
-        beforeAfter: allProcessed
-      })
+          setPreview({
+            ...preview,
+            eligibleRecords: eligibleCount,
+            beforeAfter: allProcessed
+          })
+        } catch (err) {
+          setError('Error checking rows: ' + (err as Error).message)
+        } finally {
+          setAnalysing(false)
+        }
+      }, 50)
     }
   }
 
@@ -1303,7 +1318,8 @@ export default function DonationProcessor() {
 
       <div className="space-y-6">
         {/* ---------- Idle: nothing uploaded yet ---------- */}
-        {!preview && (
+        {!preview && loading && <ReviewSkeleton message="Reading your file..." />}
+        {!preview && !loading && (
           <>
             <SummaryStrip refreshKey={saved?.claims.length ?? 0} />
 
@@ -1317,12 +1333,6 @@ export default function DonationProcessor() {
                 <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" disabled={loading} />
               </div>
             </label>
-
-            {loading && (
-              <div className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-brand-soft text-brand font-medium">
-                <Loader2 className="w-5 h-5 animate-spin" /> Reading your file...
-              </div>
-            )}
 
             <div className="grid md:grid-cols-3 gap-5">
               {[
@@ -1354,7 +1364,8 @@ export default function DonationProcessor() {
         )}
 
         {/* ---------- Review: tiles, file card, rows to fix ---------- */}
-        {preview && !showMapper && preview.beforeAfter.length > 0 && !result && (
+        {preview && !showMapper && analysing && <ReviewSkeleton message="Checking every row..." />}
+        {preview && !showMapper && !analysing && preview.beforeAfter.length > 0 && !result && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               <StatTile label="Rows uploaded" value={preview.totalRecords.toLocaleString()} caption={`${preview.sheetNames.length} sheet${preview.sheetNames.length === 1 ? '' : 's'}`} />

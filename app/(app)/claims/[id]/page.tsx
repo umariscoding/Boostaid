@@ -3,10 +3,11 @@
 import { use, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Loader2, Trash2, Undo2 } from 'lucide-react'
+import { ArrowLeft, Download, Trash2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,
@@ -116,6 +117,8 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
   const next = claim ? NEXT_STATUS[claim.status] : null
   const prev = claim ? PREV_STATUS[claim.status] : null
 
+  const ready = !!claim
+
   return (
     <>
       <Link href="/claims" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink mb-5">
@@ -123,44 +126,56 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
       </Link>
 
       {error && <div className="mb-4 rounded-xl border border-bad/20 bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
-      {!claim && !error && (
-        <div className="flex items-center gap-3 py-16 justify-center text-muted">
-          <Loader2 className="w-5 h-5 animate-spin" /> Loading...
-        </div>
-      )}
 
-      {claim && (
-        <div className="space-y-6">
+      {(ready || !error) && (
+        <div className="space-y-6" aria-busy={!ready}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-4">
-                <h1 className="font-display text-5xl font-bold tracking-tight text-ink">{claim.ref}</h1>
-                <StatusBadge status={claim.status} />
+                {claim ? (
+                  <h1 className="font-display text-5xl font-bold tracking-tight text-ink">{claim.ref}</h1>
+                ) : (
+                  <Skeleton className="h-12 w-64" />
+                )}
+                {claim ? <StatusBadge status={claim.status} /> : <Skeleton className="h-7 w-24 rounded-full" />}
               </div>
-              <p className="text-muted mt-2">
-                {claim.donationCount.toLocaleString()} donations · {fmtPeriod(claim.periodFrom, claim.periodTo)} · from{' '}
-                {claim.sourceFile} · created {fmtDateTime(claim.createdAt)}
-              </p>
+              {claim ? (
+                <p className="text-muted mt-2">
+                  {claim.donationCount.toLocaleString()} donations · {fmtPeriod(claim.periodFrom, claim.periodTo)} · from{' '}
+                  {claim.sourceFile} · created {fmtDateTime(claim.createdAt)}
+                </p>
+              ) : (
+                <Skeleton className="h-4 w-[28rem] max-w-full mt-4" />
+              )}
             </div>
             <div className="flex gap-8 text-right">
               <div>
                 <div className="text-sm text-muted">Donated</div>
-                <div className="font-display text-3xl font-bold text-ink">{gbp(claim.totalAmount)}</div>
+                {claim ? (
+                  <div className="font-display text-3xl font-bold text-ink">{gbp(claim.totalAmount)}</div>
+                ) : (
+                  <Skeleton className="h-9 w-32 mt-1 ml-auto" />
+                )}
               </div>
               <div>
                 <div className="text-sm text-muted">Gift Aid (25%)</div>
-                <div className="font-display text-3xl font-bold text-good">{gbp(claim.giftAidAmount)}</div>
+                {claim ? (
+                  <div className="font-display text-3xl font-bold text-good">{gbp(claim.giftAidAmount)}</div>
+                ) : (
+                  <Skeleton className="h-9 w-32 mt-1 ml-auto" />
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {!claim && <Skeleton className="h-11 w-40 rounded-full" />}
             {next && (
               <Button variant={next.to === 'received' ? 'success' : 'default'} disabled={busy} onClick={() => patch({ status: next.to })}>
                 {next.label}
               </Button>
             )}
-            {prev && (
+            {claim && prev && (
               <Button variant="outline" disabled={busy} onClick={() => confirm(`Move ${claim.ref} back to ${prev}?`) && patch({ status: prev })}>
                 <Undo2 className="w-4 h-4" /> Move back to {prev}
               </Button>
@@ -170,7 +185,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                 <Download className="w-4 h-4" /> Download audit file
               </Button>
             </a>
-            {claim.status === 'pending' && (
+            {claim?.status === 'pending' && (
               <Button variant="danger" disabled={busy} onClick={remove} className="ml-auto">
                 <Trash2 className="w-4 h-4" /> Delete
               </Button>
@@ -182,78 +197,101 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               <h3 className="font-display text-xl font-semibold text-ink">Details</h3>
               <div>
                 <label className={labelClass} htmlFor="hmrc">HMRC reference</label>
-                <input id="hmrc" className={inputClass} value={hmrcRef} onChange={(e) => setHmrcRef(e.target.value)} placeholder="Optional - the reference HMRC gives on submission" maxLength={100} />
+                <input id="hmrc" className={inputClass} value={hmrcRef} onChange={(e) => setHmrcRef(e.target.value)} disabled={!ready} placeholder="Optional - the reference HMRC gives on submission" maxLength={100} />
               </div>
               <div>
                 <label className={labelClass} htmlFor="notes">Notes</label>
-                <textarea id="notes" rows={3} className={`${inputClass} h-auto py-3`} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
+                <textarea id="notes" rows={3} className={`${inputClass} h-auto py-3`} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!ready} maxLength={2000} />
               </div>
-              <Button size="sm" disabled={busy} onClick={saveDetails}>
+              <Button size="sm" disabled={busy || !ready} onClick={saveDetails}>
                 {saved ? 'Saved' : 'Save details'}
               </Button>
             </Card>
 
             <Card className="p-6">
               <h3 className="font-display text-xl font-semibold text-ink mb-4">History</h3>
-              <ol className="space-y-4">
-                {[...events].reverse().map((e) => (
-                  <li key={e.id} className="flex gap-3">
-                    <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-brand" />
-                    <div>
-                      <StatusBadge status={e.status} />
-                      <div className="text-sm text-muted mt-1">{fmtDateTime(e.at)}</div>
-                      {e.note && <div className="text-sm text-muted">{e.note}</div>}
+              {claim ? (
+                <ol className="space-y-4">
+                  {[...events].reverse().map((e) => (
+                    <li key={e.id} className="flex gap-3">
+                      <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-brand" />
+                      <div>
+                        <StatusBadge status={e.status} />
+                        <div className="text-sm text-muted mt-1">{fmtDateTime(e.at)}</div>
+                        {e.note && <div className="text-sm text-muted">{e.note}</div>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="space-y-4">
+                  {[0, 1, 2].map((n) => (
+                    <div key={n} className="flex gap-3">
+                      <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-line" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-7 w-24 rounded-full" />
+                        <Skeleton className="h-4 w-36" />
+                      </div>
                     </div>
-                  </li>
-                ))}
-              </ol>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
               <h3 className="font-display text-xl font-semibold text-ink">Donations in this claim</h3>
-              <input className={`${inputClass} max-w-xs`} placeholder="Filter by name, address, postcode" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1) }} />
+              <input className={`${inputClass} max-w-xs`} placeholder="Filter by name, address, postcode" value={filter} disabled={!ready} onChange={(e) => { setFilter(e.target.value); setPage(1) }} />
             </div>
-            <div className="overflow-auto">
-              <table className="w-full text-[15px]">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b border-line">
-                    <th className={th}>Donor</th>
-                    <th className={th}>House</th>
-                    <th className={th}>Postcode</th>
-                    <th className={th}>Date</th>
-                    <th className={thr}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shown.slice((page - 1) * pageSize, page * pageSize).map((d) => (
-                    <tr key={d.id} className="border-b border-line last:border-0">
-                      <td className={`${td} py-3 text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
-                      <td className={`${td} py-3 text-ink`}>{d.address}</td>
-                      <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
-                      <td className={`${td} py-3 text-ink whitespace-nowrap`}>{fmtPlainDate(d.donationDate)}</td>
-                      <td className={`${tdr} py-3 text-ink`}>{gbp(d.amount)}</td>
-                    </tr>
-                  ))}
-                  {shown.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-10 text-center text-muted">No matching donations</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={shown.length}
-              onPage={setPage}
-              onPageSize={(n) => {
-                setPageSize(n)
-                setPage(1)
-              }}
-            />
+            {claim ? (
+              <>
+                <div className="overflow-auto">
+                  <table className="w-full text-[15px]">
+                    <thead className="sticky top-0 bg-white">
+                      <tr className="border-b border-line">
+                        <th className={th}>Donor</th>
+                        <th className={th}>House</th>
+                        <th className={th}>Postcode</th>
+                        <th className={th}>Date</th>
+                        <th className={thr}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shown.slice((page - 1) * pageSize, page * pageSize).map((d) => (
+                        <tr key={d.id} className="border-b border-line last:border-0">
+                          <td className={`${td} py-3 text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
+                          <td className={`${td} py-3 text-ink`}>{d.address}</td>
+                          <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
+                          <td className={`${td} py-3 text-ink whitespace-nowrap`}>{fmtPlainDate(d.donationDate)}</td>
+                          <td className={`${tdr} py-3 text-ink`}>{gbp(d.amount)}</td>
+                        </tr>
+                      ))}
+                      {shown.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-10 text-center text-muted">No matching donations</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  page={page}
+                  pageSize={pageSize}
+                  total={shown.length}
+                  onPage={setPage}
+                  onPageSize={(n) => {
+                    setPageSize(n)
+                    setPage(1)
+                  }}
+                />
+              </>
+            ) : (
+              <TableSkeleton
+                columns={[{ label: 'Donor' }, { label: 'House' }, { label: 'Postcode' }, { label: 'Date' }, { label: 'Amount', right: true }]}
+                rows={6}
+              />
+            )}
           </Card>
         </div>
       )}

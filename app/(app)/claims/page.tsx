@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Undo2 } from 'lucide-react'
+import { TableSkeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
@@ -36,8 +37,10 @@ export default function ClaimsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [total, setTotal] = useState(0)
+  const [fetching, setFetching] = useState(false)
 
   const load = useCallback(async (v: View, p: number, size: number) => {
+    setFetching(true)
     try {
       const data = await apiJson<{ claims: ClaimDto[]; total: number }>(`/api/claims?view=${v}&page=${p}&pageSize=${size}`)
       // The last claim on this page may have just moved to another tab: step back a page
@@ -50,6 +53,8 @@ export default function ClaimsPage() {
       setError(null)
     } catch (e) {
       setError((e as Error).message)
+    } finally {
+      setFetching(false)
     }
   }, [])
 
@@ -109,9 +114,19 @@ export default function ClaimsPage() {
 
       <Card className="mt-4 overflow-hidden">
         {claims === null && !error ? (
-          <div className="flex items-center justify-center gap-3 py-16 text-muted">
-            <Loader2 className="w-5 h-5 animate-spin" /> Loading claims...
-          </div>
+          <TableSkeleton
+            columns={[
+              { label: 'Status' },
+              { label: 'Claim' },
+              { label: 'Period' },
+              { label: 'Donations', right: true },
+              { label: 'Donated', right: true },
+              { label: 'Gift Aid (25%)', right: true },
+              { label: 'Received' },
+              { label: '', skeleton: true },
+            ]}
+            rows={Math.min(pageSize, 6)}
+          />
         ) : claims && claims.length === 0 ? (
           <div className="py-16 text-center text-muted">
             {view === 'archive' ? 'No received claims yet.' : 'No claims yet.'}{' '}
@@ -123,7 +138,7 @@ export default function ClaimsPage() {
           </div>
         ) : (
           claims && (
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-opacity ${fetching ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={fetching}>
               <table className="w-full text-[15px]">
                 <thead>
                   <tr className="border-b border-line">

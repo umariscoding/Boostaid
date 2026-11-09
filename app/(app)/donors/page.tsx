@@ -2,7 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Loader2, SlidersHorizontal } from 'lucide-react'
+import { ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { TableSkeleton } from '@/components/ui/skeleton'
 import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import { StatusBadge, apiJson, fmtDay, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
@@ -127,9 +128,19 @@ export default function DonorsPage() {
 
       <Card className="mt-8 overflow-hidden">
         {donors === null ? (
-          <div className="flex items-center justify-center gap-3 py-16 text-muted">
-            <Loader2 className="w-5 h-5 animate-spin" /> Loading donors...
-          </div>
+          <TableSkeleton
+            minWidth={1000}
+            columns={[
+              { label: '', width: '3rem' },
+              { label: 'Donor', width: '20%' },
+              { label: 'House', width: '16%' },
+              { label: 'Postcode', width: '10%' },
+              { label: 'Donations', right: true, width: '11%' },
+              { label: 'Total given', right: true, width: '11%' },
+              { label: 'In claims' },
+            ]}
+            rows={Math.min(pageSize, 8)}
+          />
         ) : donors.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="font-display text-xl font-semibold text-ink">
@@ -142,7 +153,7 @@ export default function DonorsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={loading}>
             <table className="w-full min-w-[1000px] table-fixed text-[15px]">
               <colgroup>
                 <col className="w-12" />
@@ -267,7 +278,6 @@ export default function DonorsPage() {
         <p className="mt-4 text-muted">
           {total.toLocaleString()} donor{total === 1 ? '' : 's'}
           {filtered ? ' match' : ' in total'}
-          {loading && ' \u00b7 updating...'}
         </p>
       )}
     </>

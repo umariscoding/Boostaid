@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { StatTile } from '@/components/ui/primitives'
+import { Skeleton } from '@/components/ui/skeleton'
 import { apiJson, gbp, type Status } from './shared'
 import { giftAidOn } from '@/lib/claims'
 
@@ -39,8 +40,16 @@ export default function SummaryStrip({ refreshKey = 0, linked = true }: { refres
           <StatTile
             label={label}
             tone={tone}
-            value={s ? s.count.toLocaleString() : '-'}
-            caption={s ? `${gbp(giftAidOn(s.amount))} Gift Aid · ${hint}` : hint}
+            value={s ? s.count.toLocaleString() : <Skeleton className="h-12 w-16" />}
+            caption={
+              s ? (
+                `${gbp(giftAidOn(s.amount))} Gift Aid · ${hint}`
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  <Skeleton className="h-4 w-20" /> Gift Aid &middot; {hint}
+                </span>
+              )
+            }
           />
         )
         return linked ? (
