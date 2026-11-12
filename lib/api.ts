@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SESSION_COOKIE, verifySessionToken } from '@/lib/session'
+import { SESSION_COOKIE, readSession, verifySessionToken } from '@/lib/session'
 
 type Ctx<P> = { params: Promise<P> }
 
@@ -27,3 +27,8 @@ export function withAuth<P = Record<string, never>>(
 }
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** The signed-in user's id (from the session cookie), or null. */
+export function currentUserId(req: NextRequest): string | null {
+  return readSession(req.cookies.get(SESSION_COOKIE)?.value)?.userId ?? null
+}

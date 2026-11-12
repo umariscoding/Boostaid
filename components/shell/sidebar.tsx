@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Gift, PieChart, Plus, Receipt, Search, Settings, Sparkles, type LucideIcon } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useCharity } from '@/lib/store/charity'
+import { useAccountStore } from '@/lib/store/account'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -56,6 +57,7 @@ function CharityPicker() {
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const email = useAccountStore((s) => s.email)
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
@@ -89,6 +91,7 @@ export default function Sidebar() {
 
       <div className="mt-auto px-5 py-5 text-sm text-side-muted space-y-1 hidden md:block">
         <div>Tax year {taxYear()}</div>
+        {email && <div className="truncate" title={email}>{email}</div>}
         <button
           onClick={logout}
           className="text-side-muted hover:text-white underline-offset-2 hover:underline cursor-pointer"

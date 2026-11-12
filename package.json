@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "giftaid:verify": "tsx scripts/giftaid-verify.ts"
+    "giftaid:verify": "tsx scripts/giftaid-verify.ts",
+    "user:create": "tsx scripts/create-user.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

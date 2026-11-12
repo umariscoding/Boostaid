@@ -19,6 +19,23 @@ export type ClaimStatus = (typeof claimStatus.enumValues)[number]
 /** Monotonic counter used to build human-readable claim references (GA-2026-0001). */
 export const claimRefSeq = pgSequence('claim_ref_seq', { startWith: 1 })
 
+/** People who can log in. Passwords are stored only as scrypt hashes (see lib/password.ts). */
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    name: text('name').notNull().default(''),
+    passwordHash: text('password_hash').notNull(),
+    /** Wrong passwords in a row; after 5 the account is locked for 15 minutes. */
+    failedAttempts: integer('failed_attempts').notNull().default(0),
+    lockedUntil: timestamp('locked_until', { withTimezone: true }),
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('users_email_lower_unique').on(sql`lower(${t.email})`)]
+)
+
 /**
  * A charity whose donations are being claimed. Deleting a charity deletes everything that belongs to it
  * (its uploads, claims, donations and status history) through the foreign keys below.

@@ -15,35 +15,35 @@ function sign(payload: string): string {
   return createHmac('sha256', secret()).update(payload).digest('base64url')
 }
 
-/** Cookie value: `<expiry-unix-seconds>.<hmac>`. Cannot be forged without SESSION_SECRET. */
-export function createSessionToken(): string {
+/** Cookie value: `<user id>.<expiry-unix-seconds>.<hmac>`. Cannot be forged without SESSION_SECRET. */
+export function createSessionToken(userId: string): string {
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE
-  const payload = String(exp)
+  const payload = `${userId}.${exp}`
   return `${payload}.${sign(payload)}`
 }
 
-export function verifySessionToken(token: string | undefined): boolean {
-  if (!token) return false
-  const [payload, sig] = token.split('.')
-  if (!payload || !sig) return false
+/** The signed-in user's id if the cookie is genuine and not expired, otherwise null. */
+export function readSession(token: string | undefined): { userId: string } | null {
+  if (!token) return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  const [userId, expRaw, sig] = parts
+  if (!userId || !expRaw || !sig) return null
 
   let expected: string
   try {
-    expected = sign(payload)
+    expected = sign(`${userId}.${expRaw}`)
   } catch {
-    return false
+    return null
   }
   const a = Buffer.from(sig)
   const b = Buffer.from(expected)
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null
 
-  const exp = Number(payload)
-  return Number.isFinite(exp) && exp > Math.floor(Date.now() / 1000)
+  const exp = Number(expRaw)
+  return Number.isFinite(exp) && exp > Math.floor(Date.now() / 1000) ? { userId } : null
 }
 
-/** Constant-time string comparison that doesn't leak length via early exit. */
-export function safeEqual(a: string, b: string): boolean {
-  const ha = createHmac('sha256', 'cmp').update(a).digest()
-  const hb = createHmac('sha256', 'cmp').update(b).digest()
-  return timingSafeEqual(ha, hb)
+export function verifySessionToken(token: string | undefined): boolean {
+  return readSession(token) !== null
 }

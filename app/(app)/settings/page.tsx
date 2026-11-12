@@ -8,6 +8,75 @@ import { Dialog } from '@/components/ui/dialog'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { apiJson, fmtDay, gbp } from '@/components/claims/shared'
 import { useCharity, type CharityInfo } from '@/lib/store/charity'
+import { useAccountStore } from '@/lib/store/account'
+
+function AccountCard() {
+  const email = useAccountStore((s) => s.email)
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [again, setAgain] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setDone(false)
+    if (next !== again) {
+      setError('The two new passwords do not match.')
+      return
+    }
+    setBusy(true)
+    try {
+      await apiJson('/api/account/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current, next }),
+      })
+      setCurrent('')
+      setNext('')
+      setAgain('')
+      setDone(true)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="mt-6 overflow-hidden">
+      <div className="p-6">
+        <h2 className="font-display text-2xl font-semibold text-ink">Account</h2>
+        <p className="mt-1 text-muted">
+          Signed in as <span className="text-ink">{email ?? '...'}</span>. Change your password here.
+        </p>
+        <form onSubmit={submit} className="mt-5 grid max-w-xl gap-4">
+          <div>
+            <label className={labelClass} htmlFor="pw-current">Current password</label>
+            <input id="pw-current" type="password" autoComplete="current-password" className={inputClass} value={current} onChange={(e) => setCurrent(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="pw-new">New password (at least 10 characters)</label>
+            <input id="pw-new" type="password" autoComplete="new-password" className={inputClass} value={next} onChange={(e) => setNext(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="pw-again">New password again</label>
+            <input id="pw-again" type="password" autoComplete="new-password" className={inputClass} value={again} onChange={(e) => setAgain(e.target.value)} />
+          </div>
+          {error && <div className="rounded-xl border border-bad/20 bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
+          {done && <div className="rounded-xl border border-good/20 bg-good-soft px-4 py-3 text-sm text-good">Password changed.</div>}
+          <div>
+            <Button type="submit" disabled={busy || !current || !next || !again}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Change password
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Card>
+  )
+}
 
 export default function SettingsPage() {
   const { charities, loaded, selectedId, select, refresh } = useCharity()
@@ -165,6 +234,8 @@ export default function SettingsPage() {
           </div>
         )}
       </Card>
+
+      <AccountCard />
 
       <Dialog open={!!target} onClose={() => !deleting && setToDelete(null)}>
         {target && (
