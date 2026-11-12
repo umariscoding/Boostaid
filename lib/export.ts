@@ -42,6 +42,8 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
     claimRows.map(({ claim: c, filename, charity }) => ({
       Charity: charity,
       'Claim Reference': c.ref,
+      'Schedule file': c.fileName ?? '',
+      Type: c.kind,
       'HMRC Reference': c.hmrcRef ?? '',
       Status: STATUS_LABEL[c.status],
       'Created': fmtDateTime(c.createdAt),
@@ -53,7 +55,7 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       Notes: c.notes ?? '',
     }))
   )
-  claimsSheet['!cols'] = [26, 18, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
+  claimsSheet['!cols'] = [26, 18, 26, 10, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, claimsSheet, 'Claims')
 
   const donationsSheet = XLSX.utils.json_to_sheet(
@@ -66,11 +68,13 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       'Last Name': d.lastName,
       Address: d.address,
       Postcode: d.postcode,
+      Platform: d.platform,
+      'Platform donation ID': d.platformDonationId ?? '',
       'Donation Date': fmtDate(d.donationDate),
       'Amount (GBP)': Number(d.amount),
     }))
   )
-  donationsSheet['!cols'] = [26, 18, 12, 8, 16, 16, 34, 12, 14, 14].map((wch) => ({ wch }))
+  donationsSheet['!cols'] = [26, 18, 12, 8, 16, 16, 34, 12, 16, 22, 14, 14].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, donationsSheet, 'Donations')
 
   const historySheet = XLSX.utils.json_to_sheet(

@@ -17,6 +17,10 @@ export interface ClaimDto {
   submittedAt: string | null
   receivedAt: string | null
   chunkIndex: number
+  /** 'UK' or 'Overseas' */
+  kind: string
+  /** The schedule's name, e.g. UK_schedule_1_of_4.ods */
+  fileName: string | null
   sourceFile?: string
   charityId?: string
   charityName?: string
@@ -47,12 +51,22 @@ export function toClaimDto(
     submittedAt: row.submittedAt?.toISOString() ?? null,
     receivedAt: row.receivedAt?.toISOString() ?? null,
     chunkIndex: row.chunkIndex,
+    kind: row.kind,
+    fileName: row.fileName,
     sourceFile,
     periodFrom: period?.from ?? null,
     periodTo: period?.to ?? null,
     charityId: charity?.id,
     charityName: charity?.name,
   }
+}
+
+/** yyyy-MM-dd that is a real calendar date, otherwise null. */
+export function isoDateOrNull(value: unknown): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? '').trim())
+  if (!m) return null
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return dt.getUTCFullYear() === Number(m[1]) && dt.getUTCMonth() === Number(m[2]) - 1 && dt.getUTCDate() === Number(m[3]) ? m[0] : null
 }
 
 /** dd/MM/yyyy -> yyyy-MM-dd, or null if it isn't a real date. */

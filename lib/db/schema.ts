@@ -62,6 +62,10 @@ export const claims = pgTable(
       .references(() => batches.id, { onDelete: 'cascade' }),
     chunkIndex: integer('chunk_index').notNull(),
     status: claimStatus('status').notNull().default('pending'),
+    /** 'UK' or 'Overseas': HMRC wants overseas donors in their own schedule. */
+    kind: text('kind').notNull().default('UK'),
+    /** The schedule's name from the cleaning engine, e.g. UK_schedule_1_of_4.ods */
+    fileName: text('file_name'),
     donationCount: integer('donation_count').notNull(),
     totalAmount: numeric('total_amount', { precision: 12, scale: 2 }).notNull(),
     /** Optional reference issued by HMRC once the claim is submitted. */
@@ -106,9 +110,15 @@ export const donations = pgTable(
     postcodeNorm: text('postcode_norm').notNull().default(''),
     donationDate: date('donation_date'),
     amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    /** Which platform the donation came from, and its ID there. Used to stop the same donation being claimed twice. */
+    platform: text('platform').notNull().default(''),
+    platformDonationId: text('platform_donation_id'),
+    /** Row in the HMRC schedule (data starts at row 25). */
+    hmrcRow: integer('hmrc_row'),
   },
   (t) => [
     index('donations_claim_idx').on(t.claimId),
+    index('donations_platform_id_idx').on(t.platformDonationId),
     index('donations_postcode_idx').on(t.postcodeNorm),
     index('donations_last_name_idx').on(t.lastName),
   ]

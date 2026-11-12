@@ -1,0 +1,27 @@
+{
+  "_about": "House name/number rule: address lines in -> expected HMRC 'House name or number' out. null = must go to Needs Review. The app's cleaner must pass every case.",
+  "house": [
+    [["Galsworthy Avenue, 17 Donoghue Cottages"], "17 Donoghue Cottages"],
+    [["Marston Avenue", "27"], "27"],
+    [["Hollybush Garden", "79 Hollybush House"], "79 Hollybush House"],
+    [["Watts Street", "Flat 13 Frobisher House"], "Flat 13 Frobisher House"],
+    [["Flat 10, Imperial House", "120 Grove Road"], "Flat 10 Imperial House"],
+    [["Flat 47", "Wheler House"], "Flat 47 Wheler House"],
+    [["Keats House", "7"], "7 Keats House"],
+    [["9 Brokesley Street"], "9"],
+    [["512a Katherine Road"], "512A"],
+    [["83-85 Westend Street"], "83-85"],
+    [["93-101"], "93-101"],
+    [["13 Foundry Court Tredegar Road", "Tredegar Road"], "13 Foundry Court"],
+    [["G03", "Trajan Court, 56 Usher Road"], "G03 Trajan Court"],
+    [["180C York Way Flat 405 Darley Building"], "Flat 405 Darley Building"],
+    [["35 Gaysham Hall"], "35 Gaysham Hall"],
+    [["21 Charles Dickens House", "Mansford Street"], "21 Charles Dickens House"],
+    [["Old Bethnal Green Road, Hector House"], "Hector House"],
+    [["16 Aftab Terrace Tent Street"], "16"],
+    [["7 Somersby Gardens"], "7"],
+    [["Millers lane"], null],
+    [["London", "E14 0JB"], null],
+    [["Tweenways, Kingshill Road"], null]
+  ]
+}

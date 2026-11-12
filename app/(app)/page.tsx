@@ -1,5 +1,5 @@
-import DonationProcessor from '@/components/donation-processor'
+import ClaimBuilder from '@/components/claim-builder'
 
 export default function Home() {
-  return <DonationProcessor />
+  return <ClaimBuilder />
 }

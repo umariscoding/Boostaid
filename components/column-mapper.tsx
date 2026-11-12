@@ -4,18 +4,18 @@ import { useState } from 'react'
 import { Button } from './ui/button'
 import { ArrowRight, Check, RotateCcw, GripVertical, X } from 'lucide-react'
 
-interface ColumnMapping {
+export interface ColumnMapping {
   [key: string]: string | string[] | null
 }
 
-interface GiftAidConfig {
+export interface GiftAidConfig {
   column: string | null
   valuesToKeep: string[]
 }
 
 interface ColumnMapperProps {
   detectedColumns: string[]
-  sampleData: any[]
+  sampleData: Record<string, unknown>[]
   onMappingComplete: (mapping: ColumnMapping, giftAidConfig: GiftAidConfig) => void
 }
 
@@ -379,7 +379,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
                 <tr key={idx} className="border-b border-line last:border-0">
                   {detectedColumns.map((col) => {
                     const value = row[col]
-                    let displayValue = value
+                    let displayValue: string
                     if (value instanceof Date) {
                       displayValue = value.toLocaleDateString('en-GB')
                     } else if (typeof value === 'number' && col.toLowerCase().includes('date')) {
