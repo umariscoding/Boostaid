@@ -17,6 +17,8 @@ import { buildClaim, JustGivingError, PROFILES, readTables, type ClaimResult } f
 import type { Table } from '@/lib/giftaid/read'
 import { blankSources, mapToCashBook, tableKey, tableRecords, type Upload } from '@/lib/claim-flow'
 import { assemblePack, buildSchedules, scheduleName, type NamedSchedule } from '@/lib/claim-pack'
+import { buildSimpleSheets, simpleSheetName } from '@/lib/claim-extras'
+import OptionalChecks from '@/components/claim-optional-checks'
 
 type Phase = 'idle' | 'reading' | 'review' | 'saving' | 'saved'
 
@@ -42,6 +44,7 @@ interface SavedState {
   claims: SavedClaim[]
   possibleRepeats: { count: number; claimRefs: string[] }
   schedules: NamedSchedule[]
+  simpleSheets: { name: string; data: Uint8Array }[]
   zip: Uint8Array
   workbook: Uint8Array
   summaryHtml: string
@@ -250,6 +253,7 @@ export default function ClaimBuilder() {
         claims: data.claims,
         possibleRepeats: data.possibleRepeats,
         schedules: named,
+        simpleSheets: buildSimpleSheets(result).map((s, i) => ({ name: simpleSheetName(s.plan, data.claims[i].ref), data: s.data })),
         zip: pack.zip,
         workbook: pack.workbook,
         summaryHtml: pack.summaryHtml,
@@ -521,6 +525,8 @@ export default function ClaimBuilder() {
               )}
             </div>
 
+            <OptionalChecks result={result} />
+
             <div>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex gap-1 rounded-full border border-line bg-wash p-1">
@@ -661,6 +667,37 @@ export default function ClaimBuilder() {
                   <FileSpreadsheet className="h-4 w-4 text-info" /> Review workbook (needs review, not eligible, changes)
                 </Button>
               </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="font-display text-xl font-semibold text-ink">Simple output sheets</h3>
+                <Pill tone="neutral">Optional</Pill>
+              </div>
+              <p className="mb-4 mt-1 text-muted">
+                Not needed for HMRC. Plain Excel copies of each schedule&apos;s clean data, without HMRC&apos;s template. Handy as a backup or for your own records.
+              </p>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                {saved.simpleSheets.map((s) => (
+                  <Button key={s.name} variant="outline" className="h-auto justify-start whitespace-normal py-3 text-left" onClick={() => download(s.name, s.data as BlobPart, XLSX_MIME)}>
+                    <FileSpreadsheet className="h-4 w-4 flex-shrink-0 text-info" /> {s.name}
+                  </Button>
+                ))}
+              </div>
+              {saved.simpleSheets.length > 1 && (
+                <Button
+                  variant="outline"
+                  className="mt-3"
+                  onClick={async () => {
+                    for (const s of saved.simpleSheets) {
+                      download(s.name, s.data as BlobPart, XLSX_MIME)
+                      await tick(300)
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4" /> Download all simple sheets
+                </Button>
+              )}
             </Card>
 
             {blocked.length > 0 && (
