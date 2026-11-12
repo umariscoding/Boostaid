@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Clock, Send, SlidersHorizontal } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
@@ -35,7 +35,33 @@ interface Donor {
   donations: DonationRow[]
 }
 
-const MAX_CLAIM_CHIPS = 3
+const SLOTS = [
+  { status: 'pending', word: 'pending', Icon: Clock, tone: 'text-warn' },
+  { status: 'submitted', word: 'submitted', Icon: Send, tone: 'text-info' },
+  { status: 'received', word: 'received', Icon: CheckCircle2, tone: 'text-good' },
+] as const
+
+/** How many of a donor's claims are in each state. Always three fixed-width slots, so every row lines up. */
+function ClaimStatusIcons({ claims }: { claims: { status: Status }[] }) {
+  return (
+    <div className="flex items-center">
+      {SLOTS.map(({ status, word, Icon, tone }) => {
+        const n = claims.filter((c) => c.status === status).length
+        return (
+          <span
+            key={status}
+            title={`${n} ${word} claim${n === 1 ? '' : 's'}`}
+            aria-label={`${n} ${word} claim${n === 1 ? '' : 's'}`}
+            className={`inline-flex w-14 items-center gap-1.5 tabular-nums ${n ? tone : 'text-muted/40'}`}
+          >
+            <Icon className="h-4 w-4" />
+            <span className={n ? 'text-ink' : ''}>{n}</span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function DonorsPage() {
   const { loaded, charities, selected, selectedId } = useCharity()
@@ -152,18 +178,28 @@ export default function DonorsPage() {
 
       {error && <div className="mt-6 rounded-xl border border-bad/20 bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
 
-      <Card className="mt-8 overflow-hidden">
+      <div className="mt-8 mb-2 flex flex-wrap items-center justify-end gap-x-5 gap-y-1 text-sm text-muted">
+        <span>Claims:</span>
+        {SLOTS.map(({ status, word, Icon, tone }) => (
+          <span key={status} className="inline-flex items-center gap-1.5">
+            <Icon className={`h-4 w-4 ${tone}`} /> {word.charAt(0).toUpperCase() + word.slice(1)}
+          </span>
+        ))}
+      </div>
+
+      <Card className="overflow-hidden">
         {donors === null ? (
           <TableSkeleton
             minWidth={1000}
             columns={[
               { label: '', width: '3rem' },
-              { label: 'Donor', width: '20%' },
-              { label: 'House', width: '16%' },
-              { label: 'Postcode', width: '10%' },
-              { label: 'Donations', right: true, width: '11%' },
+              { label: 'Donor', width: '22%' },
+              ...(showCharity ? [{ label: 'Charity', width: '15%' }] : []),
+              { label: 'House', width: '17%' },
+              { label: 'Postcode', width: '11%' },
+              { label: 'Donations', right: true, width: '9%' },
               { label: 'Total given', right: true, width: '11%' },
-              { label: 'In claims' },
+              { label: 'Claims' },
             ]}
             rows={Math.min(pageSize, 8)}
           />
@@ -183,10 +219,11 @@ export default function DonorsPage() {
             <table className="w-full min-w-[1000px] table-fixed text-base">
               <colgroup>
                 <col className="w-12" />
-                <col className="w-[20%]" />
-                <col className="w-[16%]" />
-                <col className="w-[10%]" />
+                <col className="w-[22%]" />
+                {showCharity && <col className="w-[15%]" />}
+                <col className="w-[17%]" />
                 <col className="w-[11%]" />
+                <col className="w-[9%]" />
                 <col className="w-[11%]" />
                 <col />
               </colgroup>
@@ -194,18 +231,17 @@ export default function DonorsPage() {
                 <tr className="border-b border-line">
                   <th className="py-3.5" />
                   <th className={th}>Donor</th>
+                  {showCharity && <th className={th}>Charity</th>}
                   <th className={th}>House</th>
                   <th className={th}>Postcode</th>
                   <th className={thr}>Donations</th>
                   <th className={thr}>Total given</th>
-                  <th className={th}>In claims</th>
+                  <th className={th}>Claims</th>
                 </tr>
               </thead>
               <tbody>
                 {donors.map((g) => {
                   const isOpen = open === g.key
-                  const shownClaims = g.claims.slice(0, MAX_CLAIM_CHIPS)
-                  const moreClaims = g.claims.length - shownClaims.length
                   return (
                     <Fragment key={g.key}>
                       <tr
@@ -215,34 +251,19 @@ export default function DonorsPage() {
                         <td className="pl-5 py-4 align-middle text-muted">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         </td>
-                        <td className={`${td} text-ink`}>
-                          {g.name}
-                          {showCharity && <div className="text-sm text-muted">{g.charityName}</div>}
-                        </td>
-                        <td className={`${td} text-ink`}>{g.house}</td>
-                        <td className={`${td} text-ink whitespace-nowrap`}>{g.postcode}</td>
+                        <td className={`${td} truncate text-ink`} title={g.name}>{g.name}</td>
+                        {showCharity && <td className={`${td} truncate text-muted`} title={g.charityName}>{g.charityName}</td>}
+                        <td className={`${td} truncate text-ink`} title={g.house}>{g.house}</td>
+                        <td className={`${td} truncate text-ink`}>{g.postcode}</td>
                         <td className={`${tdr} text-ink`}>{g.donationCount}</td>
                         <td className={`${tdr} text-ink`}>{gbp(g.total)}</td>
                         <td className={td}>
-                          <div className="flex flex-col gap-1.5 items-start">
-                            {shownClaims.map((c) => (
-                              <Link
-                                key={c.id}
-                                href={`/claims/${c.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-3 text-ink hover:text-brand"
-                              >
-                                <span className="w-[7.5rem] tabular-nums">{c.ref}</span>
-                                <StatusBadge status={c.status} />
-                              </Link>
-                            ))}
-                            {moreClaims > 0 && <span className="text-sm text-muted">+{moreClaims} more</span>}
-                          </div>
+                          <ClaimStatusIcons claims={g.claims} />
                         </td>
                       </tr>
                       {isOpen && (
                         <tr className="bg-wash border-b border-line">
-                          <td colSpan={7} className="pb-5 pt-1 pr-5 pl-12">
+                          <td colSpan={showCharity ? 8 : 7} className="pb-5 pt-1 pr-5 pl-12">
                             <div className="bg-white border border-line rounded-xl overflow-hidden">
                               <table className="w-full table-fixed text-sm">
                                 <colgroup>
