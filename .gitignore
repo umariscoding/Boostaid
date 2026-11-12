@@ -16,3 +16,6 @@
 # Client handover pack: contains real donor data in the example/expected claim packs
 /BoostAid_handover/
 /BoostAid_handover*.zip
+
+# Vercel project link
+.vercel
