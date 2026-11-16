@@ -34,10 +34,8 @@ export async function buildClaimPack(files: UploadedFile[], templateOds: ArrayBu
   const generated = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')
 
   const zip = new JSZip()
-  // Box 1 = earliest donation of that kind (UK files share one date, overseas files another)
-  const earliest = (kind: 'UK' | 'Overseas') => res(kind).map((f) => f.firstDate).sort()[0]
-  const res = (kind: 'UK' | 'Overseas') => result.files.filter((f) => f.kind === kind)
-  for (const f of result.files) zip.file(`1_Submit_to_HMRC/${f.name}`, await writeHmrcOds(templateOds, f, earliest(f.kind)))
+  // Box 1 = earliest donation in that schedule (Charities Online takes one schedule per claim)
+  for (const f of result.files) zip.file(`1_Submit_to_HMRC/${f.name}`, await writeHmrcOds(templateOds, f, f.firstDate))
   zip.file('2_Claim_workbook.xlsx', await buildClaimWorkbook(result, fingerprints, generated))
   const summaryHtml = buildSummaryHtml(result, generated)
   zip.file('3_Claim_summary.html', summaryHtml)

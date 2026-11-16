@@ -59,7 +59,7 @@ function setCells(rowXml: string, values: Map<number, Cell>): string {
 
 /**
  * Fill one HMRC file. `templateOds` = bytes of public/hmrc_template.ods.
- * `box1Date` = earliest donation date across all files of the same kind (UK or overseas).
+ * `box1Date` = earliest donation date in this file (each file is submitted as its own claim).
  */
 export async function writeHmrcOds(templateOds: ArrayBuffer | Uint8Array, file: HmrcFilePlan, box1Date: string): Promise<Uint8Array> {
   const zip = await JSZip.loadAsync(templateOds)

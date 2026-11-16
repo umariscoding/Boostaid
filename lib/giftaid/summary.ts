@@ -50,7 +50,7 @@ table{border-collapse:collapse;width:100%} td,th{border-bottom:1px solid #ddd;pa
 <table class=simple>${summaryLines(res).map(([l, v, n]) => `<tr><td>${l}</td><td class="n b${l.startsWith('Estimated') ? ' hl' : ''}">${v}</td><td class=muted>${n}</td></tr>`).join('')}</table>
 ${platformRows}
 <h2>Next steps</h2><ol><li>Upload the ${res.files.length} file(s) in <b>1_Submit_to_HMRC</b> to Charities Online.</li><li>Check the ${int(res.review.length)} records needing attention (Needs Review tab) - fix and include them in a later claim.</li><li>When HMRC pays, record the date and amount.</li></ol>
-<div class=page2><h1>Audit detail</h1><div class=muted>Box 1 (earliest donation): ${res.box1Date ? toDDMMYY(res.box1Date) : '-'}</div>
+<div class=page2><h1>Audit detail</h1><div class=muted>Earliest donation overall: ${res.box1Date ? toDDMMYY(res.box1Date) : '-'}. Each HMRC file's Box 1 is the first date in its own Dates column below.</div>
 <h2>Source files</h2><table><tr><th>File</th><th>Platform</th><th class=n>Lines</th><th class=n>Claimed</th><th class=n>Review</th><th class=n>Not eligible</th></tr>
 ${res.sheets.map((sh) => `<tr><td>${esc(sh.table)}</td><td>${esc(sh.platform)}</td><td class=n>${int(sh.rowsUsed)}</td><td class=n>${int(count(claimed, sh.table))}</td><td class=n>${int(count(res.review, sh.table))}</td><td class=n>${int(count(res.ineligible, sh.table))}</td></tr>`).join('')}</table>
 <h2>HMRC files</h2><table><tr><th>File</th><th class=n>Rows</th><th class=n>Donations</th><th class=n>Gift Aid</th><th>Dates</th></tr>
