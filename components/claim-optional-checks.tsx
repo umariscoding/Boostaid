@@ -100,7 +100,7 @@ export default function OptionalChecks({ result }: { result: ClaimResult }) {
                     {rows.slice(start, start + pageSize).map((r, i) => {
                       const list = changes.get(String(r.donationId ?? '')) ?? []
                       return (
-                        <tr key={start + i} className="border-b border-line align-top last:border-0">
+                        <tr key={start + i} className="border-b border-line-soft align-top last:border-0">
                           <td className={`${td} truncate text-ink`} title={`${r.firstName} ${r.lastName}`}>{r.firstName} {r.lastName}</td>
                           <td className={`${td} truncate text-ink`} title={r.house}>{r.house}</td>
                           <td className={`${td} truncate text-ink`}>{r.postcode}</td>
@@ -148,7 +148,7 @@ export default function OptionalChecks({ result }: { result: ClaimResult }) {
                   </thead>
                   <tbody>
                     {file?.rows.slice(0, 5).map((r, i) => (
-                      <tr key={i} className="border-b border-line last:border-0">
+                      <tr key={i} className="border-b border-line-soft last:border-0">
                         <td className="px-3 py-2.5 text-muted">{r.hmrcRow}</td>
                         <td className="px-3 py-2.5 text-ink">{r.title}</td>
                         <td className="px-3 py-2.5 text-ink">{r.firstName}</td>

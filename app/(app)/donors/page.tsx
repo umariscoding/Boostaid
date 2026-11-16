@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ChevronRight, Clock, Send, SlidersHorizontal } from 'lucide-react'
+import { BadgeCheck, ChevronRight, FileCheck2, Send, SlidersHorizontal } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { Card, PageHeader, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
@@ -36,9 +36,9 @@ interface Donor {
 }
 
 const SLOTS = [
-  { status: 'pending', word: 'pending', Icon: Clock, tone: 'text-warn' },
-  { status: 'submitted', word: 'submitted', Icon: Send, tone: 'text-info' },
-  { status: 'received', word: 'received', Icon: CheckCircle2, tone: 'text-good' },
+  { status: 'pending', word: 'ready', Icon: FileCheck2, tone: 'text-good' },
+  { status: 'submitted', word: 'submitted', Icon: Send, tone: 'text-warn' },
+  { status: 'received', word: 'received', Icon: BadgeCheck, tone: 'text-info' },
 ] as const
 
 /** How many of a donor's claims are in each state. Always three fixed-width slots, so every row lines up. */
@@ -286,7 +286,7 @@ export default function DonorsPage() {
                                 </thead>
                                 <tbody>
                                   {g.donations.map((d) => (
-                                    <tr key={d.id} className="border-b border-line last:border-0">
+                                    <tr key={d.id} className="border-b border-line-soft last:border-0">
                                       <td className="px-5 py-3 align-middle text-ink whitespace-nowrap">{fmtPlainDate(d.donationDate)}</td>
                                       <td className="px-5 py-3 align-middle text-right tabular-nums text-ink">{gbp(d.amount)}</td>
                                       <td className="px-5 py-3 align-middle">

@@ -40,10 +40,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-wash flex items-center justify-center p-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-full bg-[#7c5cf0] flex items-center justify-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center mb-4">
             <Gift className="w-6 h-6 text-white" />
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">BoostAid</h1>

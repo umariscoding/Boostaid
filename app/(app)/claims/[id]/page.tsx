@@ -6,16 +6,18 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Download, Trash2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
+import SubmitDialog from '@/components/claims/submit-dialog'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,
   PREV_STATUS,
+  STATUS_LABEL,
   StatusBadge,
   apiJson,
   fmtDateTime,
-  fmtPeriod,
+  fmtDay,
   fmtPlainDate,
   gbp,
   type Status,
@@ -118,6 +120,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
   const prev = claim ? PREV_STATUS[claim.status] : null
 
   const ready = !!claim
+  const [submitOpen, setSubmitOpen] = useState(false)
 
   return (
     <>
@@ -141,7 +144,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               </div>
               {claim ? (
                 <p className="text-muted mt-2">
-                  {claim.charityName} · {claim.donationCount.toLocaleString()} donations · {fmtPeriod(claim.periodFrom, claim.periodTo)} · from{' '}
+                  {claim.charityName} · {claim.donationCount.toLocaleString()} donations · earliest donation {fmtPlainDate(claim.periodFrom ?? null)} · from{' '}
                   {claim.sourceFile} · created {fmtDateTime(claim.createdAt)}
                 </p>
               ) : (
@@ -168,16 +171,37 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
+          <ol className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-3">
+            {[
+              { label: '1 · Ready', detail: claim ? `Cleaned · ${claim.donationCount.toLocaleString()} donations` : '', done: !!claim },
+              {
+                label: '2 · Submitted',
+                detail: claim?.submittedAt ? `On ${fmtDay(claim.submittedAt)} · HMRC ref ${claim.hmrcRef || 'not added'}` : 'Not yet',
+                done: !!claim?.submittedAt,
+              },
+              { label: '3 · Received', detail: claim?.receivedAt ? `${fmtDay(claim.receivedAt)} · ${gbp(claim.giftAidAmount)}` : 'Waiting for HMRC', done: !!claim?.receivedAt },
+            ].map((t) => (
+              <li key={t.label} className={`flex flex-col gap-1 rounded-xl p-3.5 ${t.done ? 'bg-good-soft text-good' : 'bg-[#f3f2f8] text-muted'}`}>
+                <span className="text-xs font-bold uppercase tracking-wide">{t.label}</span>
+                <span className="text-base">{claim ? t.detail : <Skeleton className="h-4 w-40" />}</span>
+              </li>
+            ))}
+          </ol>
+
           <div className="flex flex-wrap items-center gap-2">
             {!claim && <Skeleton className="h-11 w-40 rounded-full" />}
             {next && (
-              <Button variant={next.to === 'received' ? 'success' : 'default'} disabled={busy} onClick={() => patch({ status: next.to })}>
+              <Button
+                variant={next.to === 'received' ? 'success' : 'dark'}
+                disabled={busy}
+                onClick={() => (next.to === 'submitted' ? setSubmitOpen(true) : patch({ status: next.to }))}
+              >
                 {next.label}
               </Button>
             )}
             {claim && prev && (
-              <Button variant="outline" disabled={busy} onClick={() => confirm(`Move ${claim.ref} back to ${prev}?`) && patch({ status: prev })}>
-                <Undo2 className="w-4 h-4" /> Move back to {prev}
+              <Button variant="outline" disabled={busy} onClick={() => confirm(`Move ${claim.ref} back to ${STATUS_LABEL[prev].toLowerCase()}?`) && patch({ status: prev })}>
+                <Undo2 className="w-4 h-4" /> Move back to {STATUS_LABEL[prev].toLowerCase()}
               </Button>
             )}
             <a href={`/api/claims/${id}/export`}>
@@ -259,7 +283,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                     </thead>
                     <tbody>
                       {shown.slice((page - 1) * pageSize, page * pageSize).map((d) => (
-                        <tr key={d.id} className="border-b border-line last:border-0">
+                        <tr key={d.id} className="border-b border-line-soft last:border-0">
                           <td className={`${td} py-3 text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
                           <td className={`${td} py-3 text-ink`}>{d.address}</td>
                           <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
@@ -295,6 +319,8 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
           </Card>
         </div>
       )}
+
+      <SubmitDialog claim={submitOpen ? claim : null} onClose={() => setSubmitOpen(false)} onDone={() => load()} />
     </>
   )
 }

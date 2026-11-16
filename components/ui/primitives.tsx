@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 export const card = 'bg-white border border-line rounded-2xl'
 export const inputClass =
-  'w-full h-11 px-4 rounded-xl bg-white border border-line text-ink placeholder:text-muted/70 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50'
+  'w-full h-11 px-4 rounded-xl bg-white border border-line-strong text-ink placeholder:text-muted/70 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/50'
 export const labelClass = 'block text-sm font-medium text-ink mb-1.5'
 export const th = 'px-5 py-3.5 text-left text-sm font-medium text-muted whitespace-nowrap'
 /** Right-aligned header for number columns. */
@@ -18,13 +18,15 @@ export function Card({ className, children }: { className?: string; children: Re
 }
 
 type Tone = 'ink' | 'good' | 'info' | 'bad' | 'warn' | 'brand'
-const TONE_TEXT: Record<Tone, string> = {
-  ink: 'text-ink',
-  good: 'text-good',
-  info: 'text-info',
-  bad: 'text-bad',
-  warn: 'text-warn',
-  brand: 'text-brand',
+
+// Plain white card for neutral figures; a tinted card (like the design) for status figures.
+const TILE: Record<Tone, { box: string; label: string; value: string; caption: string }> = {
+  ink: { box: 'bg-white border-line', label: 'text-muted', value: 'text-ink', caption: 'text-muted' },
+  brand: { box: 'bg-white border-line', label: 'text-muted', value: 'text-brand', caption: 'text-muted' },
+  good: { box: 'bg-good-soft border-good-line', label: 'text-good', value: 'text-good', caption: 'text-good' },
+  info: { box: 'bg-info-soft border-info-line', label: 'text-info', value: 'text-info', caption: 'text-info' },
+  warn: { box: 'bg-warn-soft border-warn-line', label: 'text-warn', value: 'text-warn', caption: 'text-warn' },
+  bad: { box: 'bg-bad-soft border-bad-line', label: 'text-bad', value: 'text-bad', caption: 'text-bad' },
 }
 
 export function StatTile({
@@ -38,21 +40,22 @@ export function StatTile({
   caption?: ReactNode
   tone?: Tone
 }) {
+  const t = TILE[tone]
   return (
-    <div className={cn(card, 'p-6')}>
-      <div className="text-base text-muted">{label}</div>
-      <div className={cn('font-display text-4xl font-bold tracking-tight mt-1.5', TONE_TEXT[tone])}>{value}</div>
-      {caption && <div className="text-base text-muted mt-2">{caption}</div>}
+    <div className={cn('h-full rounded-2xl border p-5', t.box)}>
+      <div className={cn('text-base font-medium', t.label)}>{label}</div>
+      <div className={cn('mt-1.5 font-display text-4xl font-bold tracking-tight', t.value)}>{value}</div>
+      {caption && <div className={cn('mt-1.5 text-base', t.caption)}>{caption}</div>}
     </div>
   )
 }
 
 const PILL: Record<'neutral' | 'warn' | 'good' | 'bad' | 'info' | 'brand', string> = {
-  neutral: 'bg-[#eef0f3] text-[#3b4252]',
-  warn: 'bg-warn-soft text-warn',
-  good: 'bg-good-soft text-good',
-  bad: 'bg-bad-soft text-bad',
-  info: 'bg-info-soft text-info',
+  neutral: 'bg-[#f1eff6] text-muted',
+  warn: 'bg-warn-pill text-warn',
+  good: 'bg-good-pill text-good',
+  bad: 'bg-bad-pill text-bad',
+  info: 'bg-info-pill text-info',
   brand: 'bg-brand-soft text-brand',
 }
 
@@ -88,6 +91,36 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
           Upload new file
         </Link>
       )}
+    </div>
+  )
+}
+
+/** Underlined tabs, as in the design. */
+export function Tabs<T extends string>({
+  tabs,
+  value,
+  onChange,
+}: {
+  tabs: { id: T; label: ReactNode }[]
+  value: T
+  onChange: (id: T) => void
+}) {
+  return (
+    <div role="tablist" className="flex gap-2 border-b border-line">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={value === t.id}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            '-mb-px h-11 cursor-pointer border-b-[3px] px-4 text-base transition-colors',
+            value === t.id ? 'border-brand font-semibold text-brand' : 'border-transparent font-medium text-muted hover:text-ink'
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   )
 }

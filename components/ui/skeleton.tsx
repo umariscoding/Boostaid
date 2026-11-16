@@ -41,7 +41,7 @@ export function TableSkeleton({ columns, rows = 6, minWidth }: { columns: Skelet
         </thead>
         <tbody>
           {Array.from({ length: rows }).map((_, r) => (
-            <tr key={r} className="border-b border-line last:border-0">
+            <tr key={r} className="border-b border-line-soft last:border-0">
               {columns.map((c, i) => (
                 <td key={i} className={cn(td, 'py-[1.15rem]')}>
                   {(c.skeleton ?? c.label !== '') ? (

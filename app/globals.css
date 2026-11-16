@@ -2,8 +2,8 @@
 
 /* Light theme only. Tokens follow the BoostAid dashboard design. */
 :root {
-  --background: #ffffff;
-  --foreground: #161628;
+  --background: #f7f6fb;
+  --foreground: #17152b;
 }
 
 @theme inline {
@@ -14,27 +14,43 @@
   --font-display: var(--font-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-ink: #161628;
-  --color-muted: #66667c;
-  --color-line: #e7e5ee;
-  --color-wash: #faf9fd;
+  /* Page and cards */
+  --color-canvas: #f7f6fb;
+  --color-ink: #17152b;
+  --color-muted: #3d3a55;
+  --color-line: #e3e0ec;
+  --color-line-soft: #f1eff6;
+  --color-line-strong: #cfcadf;
+  --color-wash: #f7f6fb;
 
-  --color-brand: #4a2bb3;
-  --color-brand-dark: #3b2194;
-  --color-brand-soft: #f1edff;
+  /* Brand */
+  --color-brand: #4c1d95;
+  --color-brand-dark: #3b0f7a;
+  --color-brand-soft: #f4effe;
+  --color-accent: #7c3aed;
 
-  --color-side: #14141f;
-  --color-side-active: #25253a;
-  --color-side-muted: #8d8da3;
+  /* Sidebar */
+  --color-side: #16131f;
+  --color-side-active: #2c2740;
+  --color-side-muted: #c9c4da;
 
-  --color-good: #2b6b3f;
-  --color-good-soft: #e4f3e8;
-  --color-info: #2547a6;
-  --color-info-soft: #e6ecfb;
-  --color-bad: #9a2b1d;
-  --color-bad-soft: #fbe8e5;
-  --color-warn: #7a4a05;
-  --color-warn-soft: #fdf1d9;
+  /* Status colours: Ready = green, Submitted = amber, Received = blue, Needs review = red */
+  --color-good: #0f5a30;
+  --color-good-soft: #eaf7ef;
+  --color-good-line: #bfe6cd;
+  --color-good-pill: #e7f6ec;
+  --color-info: #1e4fa8;
+  --color-info-soft: #e8effe;
+  --color-info-line: #c6d6fb;
+  --color-info-pill: #e3ecff;
+  --color-warn: #7a4300;
+  --color-warn-soft: #fff4e0;
+  --color-warn-line: #f6d9a4;
+  --color-warn-pill: #fff1db;
+  --color-bad: #9b1c13;
+  --color-bad-soft: #fff6f5;
+  --color-bad-line: #f3c9c4;
+  --color-bad-pill: #fde8e7;
 }
 
 html {

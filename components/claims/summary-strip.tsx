@@ -10,10 +10,11 @@ import { giftAidOn } from '@/lib/claims'
 
 type Summary = Record<Status, { count: number; amount: number }>
 
+// Order and colours follow the design: money in (blue), waiting (amber), ready to go (green)
 const TILES: { status: Status; label: string; hint: string; tone: 'warn' | 'info' | 'good' }[] = [
-  { status: 'pending', label: 'Pending claims', hint: 'not yet sent to HMRC', tone: 'warn' },
-  { status: 'submitted', label: 'Submitted claims', hint: 'awaiting payment', tone: 'info' },
-  { status: 'received', label: 'Received claims', hint: 'money banked', tone: 'good' },
+  { status: 'received', label: 'Received from HMRC', hint: 'banked', tone: 'info' },
+  { status: 'submitted', label: 'Waiting for HMRC', hint: 'submitted, not yet paid', tone: 'warn' },
+  { status: 'pending', label: 'Ready to submit', hint: 'download and upload to HMRC', tone: 'good' },
 ]
 
 /** Claim counts and values by status. Quietly hides itself if the database isn't reachable. */
@@ -46,13 +47,13 @@ export default function SummaryStrip({ refreshKey = 0, linked = true }: { refres
           <StatTile
             label={label}
             tone={tone}
-            value={s ? s.count.toLocaleString() : <Skeleton className="h-12 w-16" />}
+            value={s ? gbp(giftAidOn(s.amount)) : <Skeleton className="h-10 w-40" />}
             caption={
               s ? (
-                `${gbp(giftAidOn(s.amount))} Gift Aid · ${hint}`
+                `${s.count.toLocaleString()} claim${s.count === 1 ? '' : 's'} · ${hint}`
               ) : (
                 <span className="inline-flex items-center gap-2">
-                  <Skeleton className="h-4 w-20" /> Gift Aid &middot; {hint}
+                  <Skeleton className="h-4 w-16" /> {hint}
                 </span>
               )
             }

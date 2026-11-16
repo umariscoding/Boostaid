@@ -26,7 +26,15 @@ export const GET = withAuth<Params>(async (_req, { params }) => {
   ])
 
   return NextResponse.json({
-    claim: toClaimDto(row.claim, row.filename, undefined, { id: row.charityId, name: row.charityName }),
+    claim: toClaimDto(
+      row.claim,
+      row.filename,
+      (() => {
+        const dates = rows.map((d) => d.donationDate).filter((d): d is string => !!d).sort()
+        return { from: dates[0] ?? null, to: dates[dates.length - 1] ?? null }
+      })(),
+      { id: row.charityId, name: row.charityName }
+    ),
     donations: rows.map((d) => ({
       id: d.id,
       title: d.title,
@@ -113,7 +121,7 @@ export const DELETE = withAuth<Params>(async (_req, { params }) => {
 
   if (outcome === 'missing') return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (outcome === 'locked') {
-    return NextResponse.json({ error: 'Only pending claims can be deleted' }, { status: 409 })
+    return NextResponse.json({ error: 'Only claims that are still Ready (not submitted) can be deleted' }, { status: 409 })
   }
   return NextResponse.json({ success: true })
 })

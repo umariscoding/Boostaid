@@ -30,15 +30,15 @@ export function fmtPeriod(from?: string | null, to?: string | null): string {
 }
 
 export const STATUS_LABEL: Record<Status, string> = {
-  pending: 'Pending',
+  pending: 'Ready',
   submitted: 'Submitted',
   received: 'Received',
 }
 
 const STATUS_TONE: Record<Status, 'warn' | 'info' | 'good'> = {
-  pending: 'warn',
-  submitted: 'info',
-  received: 'good',
+  pending: 'good',
+  submitted: 'warn',
+  received: 'info',
 }
 
 export function StatusBadge({ status }: { status: Status }) {

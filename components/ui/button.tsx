@@ -10,7 +10,7 @@ const buttonVariants = cva(
         default: "bg-brand text-white hover:bg-brand-dark",
         dark: "bg-ink text-white hover:bg-black",
         success: "bg-good text-white hover:bg-[#235a34]",
-        outline: "border border-line bg-white text-ink hover:bg-wash",
+        outline: "border border-line-strong bg-white text-ink hover:bg-wash",
         ghost: "text-muted hover:bg-wash hover:text-ink",
         danger: "border border-bad/30 bg-white text-bad hover:bg-bad-soft",
       },

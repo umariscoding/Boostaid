@@ -216,7 +216,7 @@ export default function SettingsPage() {
               </thead>
               <tbody>
                 {charities.map((c) => (
-                  <tr key={c.id} className="border-b border-line last:border-0">
+                  <tr key={c.id} className="border-b border-line-soft last:border-0">
                     <td className={`${td} text-ink`}>{c.name}</td>
                     <td className={`${tdr} text-ink`}>{c.claimCount.toLocaleString()}</td>
                     <td className={`${tdr} text-ink`}>{c.donationCount.toLocaleString()}</td>

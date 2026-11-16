@@ -376,7 +376,7 @@ function ColumnMapper({ detectedColumns, sampleData, onMappingComplete }: Column
             </thead>
             <tbody>
               {sampleData.slice(0, 10).map((row, idx) => (
-                <tr key={idx} className="border-b border-line last:border-0">
+                <tr key={idx} className="border-b border-line-soft last:border-0">
                   {detectedColumns.map((col) => {
                     const value = row[col]
                     let displayValue: string

@@ -7,7 +7,7 @@ const fmtDateTime = (d: Date | null) =>
 
 const fmtDate = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '')
 
-const STATUS_LABEL = { pending: 'Pending', submitted: 'Submitted', received: 'Received' } as const
+const STATUS_LABEL = { pending: 'Ready', submitted: 'Submitted', received: 'Received' } as const
 
 /** Builds the audit workbook (Claims, Donations, Status History) for the given claims filter. */
 export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {

@@ -5,19 +5,21 @@ import Link from 'next/link'
 import { Loader2, Undo2 } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
+import { Card, PageHeader, Tabs, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
+import SubmitDialog from '@/components/claims/submit-dialog'
 import NoCharityNotice from '@/components/charity/no-charity-notice'
 import { useCharity } from '@/lib/store/charity'
 import type { ClaimDto } from '@/lib/claims'
 import {
   NEXT_STATUS,
   PREV_STATUS,
+  STATUS_LABEL,
   StatusBadge,
   apiJson,
   fmtDay,
-  fmtPeriod,
+  fmtPlainDate,
   gbp,
   type Status,
 } from '@/components/claims/shared'
@@ -42,6 +44,7 @@ export default function ClaimsPage() {
   const [pageSize, setPageSize] = useState(25)
   const [total, setTotal] = useState(0)
   const [fetching, setFetching] = useState(false)
+  const [submitFor, setSubmitFor] = useState<ClaimDto | null>(null)
 
   const load = useCallback(async (v: View, p: number, size: number, charity: string) => {
     setFetching(true)
@@ -104,7 +107,7 @@ export default function ClaimsPage() {
     <>
       <PageHeader
         title="Claims"
-        subtitle={`Track each HMRC submission from pending to received. ${selected ? `Showing ${selected.name}.` : 'Showing all charities.'}`}
+        subtitle={`Every claim, from ready → submitted to HMRC → money received. ${selected ? `Showing ${selected.name}.` : 'Showing all charities.'}`}
       />
 
       {loaded && charities.length === 0 ? (
@@ -113,19 +116,9 @@ export default function ClaimsPage() {
       <>
       <SummaryStrip refreshKey={tick} linked={false} />
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-wash border border-line p-1">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => changeView(t.id)}
-              className={`px-4 h-9 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-                view === t.id ? 'bg-white text-ink shadow-sm border border-line' : 'text-muted hover:text-ink border border-transparent'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-[260px] flex-1">
+          <Tabs tabs={TABS.map((t) => ({ id: t.id, label: t.label }))} value={view} onChange={changeView} />
         </div>
         <a href={`/api/export?view=${view}&charity=${selectedId}`}>
           <Button variant="outline">Export list</Button>
@@ -141,7 +134,7 @@ export default function ClaimsPage() {
               { label: 'Status' },
               { label: 'Claim' },
               ...(showCharity ? [{ label: 'Charity' }] : []),
-              { label: 'Period' },
+              { label: 'Date' },
               { label: 'Donations', right: true },
               { label: 'Donated', right: true },
               { label: 'Gift Aid (25%)', right: true },
@@ -169,7 +162,7 @@ export default function ClaimsPage() {
                     <th className={th}>Status</th>
                     <th className={th}>Claim</th>
                     {showCharity && <th className={th}>Charity</th>}
-                    <th className={th}>Period</th>
+                    <th className={th} title="Earliest donation in this claim">Date</th>
                     <th className={thr}>Donations</th>
                     <th className={thr}>Donated</th>
                     <th className={thr}>Gift Aid (25%)</th>
@@ -183,7 +176,7 @@ export default function ClaimsPage() {
                     const prev = PREV_STATUS[c.status]
                     const busy = busyId === c.id
                     return (
-                      <tr key={c.id} className="border-b border-line last:border-0 hover:bg-wash/60">
+                      <tr key={c.id} className="border-b border-line-soft last:border-0 hover:bg-wash/60">
                         <td className={td}>
                           <StatusBadge status={c.status} />
                         </td>
@@ -194,7 +187,7 @@ export default function ClaimsPage() {
                           {c.hmrcRef && <div className="text-xs text-muted">HMRC: {c.hmrcRef}</div>}
                         </td>
                         {showCharity && <td className={`${td} text-ink`}>{c.charityName}</td>}
-                        <td className={`${td} text-ink whitespace-nowrap`}>{fmtPeriod(c.periodFrom, c.periodTo)}</td>
+                        <td className={`${td} text-ink whitespace-nowrap`}>{fmtPlainDate(c.periodFrom ?? null)}</td>
                         <td className={`${tdr} text-ink`}>{c.donationCount.toLocaleString()}</td>
                         <td className={`${tdr} text-muted`}>{gbp(c.totalAmount)}</td>
                         <td className={`${tdr} text-ink`}>{gbp(c.giftAidAmount)}</td>
@@ -206,10 +199,10 @@ export default function ClaimsPage() {
                           <div className="flex items-center justify-end gap-2">
                             {prev && (
                               <button
-                                title={`Move back to ${prev}`}
+                                title={`Move back to ${STATUS_LABEL[prev].toLowerCase()}`}
                                 disabled={busy}
                                 onClick={() => {
-                                  if (confirm(`Move ${c.ref} back to ${prev}?`)) changeStatus(c.id, prev)
+                                  if (confirm(`Move ${c.ref} back to ${STATUS_LABEL[prev].toLowerCase()}?`)) changeStatus(c.id, prev)
                                 }}
                                 className="p-2 rounded-full text-muted hover:text-ink hover:bg-wash disabled:opacity-50 cursor-pointer"
                               >
@@ -219,9 +212,9 @@ export default function ClaimsPage() {
                             {next && (
                               <Button
                                 size="sm"
-                                variant={next.to === 'received' ? 'success' : 'default'}
+                                variant={next.to === 'received' ? 'success' : 'dark'}
                                 disabled={busy}
-                                onClick={() => changeStatus(c.id, next.to)}
+                                onClick={() => (next.to === 'submitted' ? setSubmitFor(c) : changeStatus(c.id, next.to))}
                               >
                                 {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                 {next.label}
@@ -229,7 +222,7 @@ export default function ClaimsPage() {
                             )}
                             <Link
                               href={`/claims/${c.id}`}
-                              className="inline-flex h-9 items-center rounded-full border border-line bg-white px-4 text-sm font-medium text-ink hover:bg-wash"
+                              className="inline-flex h-9 items-center rounded-full border border-line-strong bg-white px-4 text-sm font-medium text-ink hover:bg-wash"
                             >
                               Open
                             </Link>
@@ -254,6 +247,15 @@ export default function ClaimsPage() {
           }}
         />
       </Card>
+
+      <SubmitDialog
+        claim={submitFor}
+        onClose={() => setSubmitFor(null)}
+        onDone={() => {
+          load(view, page, pageSize, selectedId)
+          setTick((t) => t + 1)
+        }}
+      />
       </>
       )}
     </>
