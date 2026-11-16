@@ -11,6 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "giftaid:verify": "tsx scripts/giftaid-verify.ts",
+    "samples:make": "tsx scripts/make-samples.ts samples",
+    "samples:check": "tsx scripts/check-samples.ts samples",
     "user:create": "tsx scripts/create-user.ts"
   },
   "dependencies": {
