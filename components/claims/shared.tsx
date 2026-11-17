@@ -54,7 +54,7 @@ export const NEXT_STATUS: Record<Status, { to: Status; label: string } | null> =
 export const PREV_STATUS: Record<Status, Status | null> = {
   pending: null,
   submitted: 'pending',
-  received: 'submitted',
+  received: null, // a received claim is locked for audit
 }
 
 export async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
