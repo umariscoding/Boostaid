@@ -28,13 +28,15 @@ export const GET = withAuth(async (req) => {
       status: claims.status,
       count: sql<number>`count(*)::int`,
       amount: sql<string>`coalesce(sum(${claims.totalAmount}), 0)::text`,
+      // What HMRC actually paid (falls back to 25% for claims marked received before the amount was recorded)
+      paid: sql<string>`coalesce(sum(coalesce(${claims.receivedAmount}, round(${claims.totalAmount} * 0.25, 2))), 0)::text`,
     })
     .from(claims)
     .where(scope)
     .groupBy(claims.status)
 
-  const summary = { pending: { count: 0, amount: 0 }, submitted: { count: 0, amount: 0 }, received: { count: 0, amount: 0 } }
-  for (const t of totals) summary[t.status] = { count: t.count, amount: Number(t.amount) }
+  const summary = { pending: { count: 0, amount: 0, paid: 0 }, submitted: { count: 0, amount: 0, paid: 0 }, received: { count: 0, amount: 0, paid: 0 } }
+  for (const t of totals) summary[t.status] = { count: t.count, amount: Number(t.amount), paid: Number(t.paid) }
 
   if (summaryOnly) return NextResponse.json({ summary })
 

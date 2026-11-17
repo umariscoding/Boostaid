@@ -80,6 +80,11 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
         if (status === 'submitted' && current.status === 'pending' && !ref) {
           throw new RangeError('Enter the HMRC reference for this submission')
         }
+        if (status === 'received') {
+          const amt = Number(body.receivedAmount)
+          if (!Number.isFinite(amt) || amt <= 0 || amt > 10_000_000) throw new RangeError('Enter the amount HMRC actually paid')
+          patch.receivedAmount = (Math.round(amt * 100) / 100).toFixed(2)
+        }
         const now = new Date()
         patch.status = status
         if (status === 'pending') {

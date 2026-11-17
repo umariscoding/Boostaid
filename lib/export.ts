@@ -53,11 +53,12 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       Donations: c.donationCount,
       'Donations (GBP)': Number(c.totalAmount),
       'Gift Aid (GBP)': giftAidOn(Number(c.totalAmount)),
+      'Received from HMRC (GBP)': c.receivedAmount === null ? '' : Number(c.receivedAmount),
       'Source File': filename,
       Notes: c.notes ?? '',
     }))
   )
-  claimsSheet['!cols'] = [26, 18, 26, 10, 18, 12, 18, 18, 18, 10, 16, 14, 30, 40].map((wch) => ({ wch }))
+  claimsSheet['!cols'] = [26, 18, 26, 10, 18, 12, 18, 18, 18, 10, 16, 14, 22, 30, 40].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, claimsSheet, 'Claims')
 
   const donationsSheet = XLSX.utils.json_to_sheet(

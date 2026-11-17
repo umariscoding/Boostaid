@@ -16,6 +16,8 @@ export interface ClaimDto {
   createdAt: string
   submittedAt: string | null
   receivedAt: string | null
+  /** What HMRC actually paid, or null if not received yet. */
+  receivedAmount: number | null
   chunkIndex: number
   /** 'UK' or 'Overseas' */
   kind: string
@@ -50,6 +52,7 @@ export function toClaimDto(
     createdAt: row.createdAt.toISOString(),
     submittedAt: row.submittedAt?.toISOString() ?? null,
     receivedAt: row.receivedAt?.toISOString() ?? null,
+    receivedAmount: row.receivedAmount === null || row.receivedAmount === undefined ? null : Number(row.receivedAmount),
     chunkIndex: row.chunkIndex,
     kind: row.kind,
     fileName: row.fileName,
