@@ -1,4 +1,5 @@
 import type { Table } from '@/lib/giftaid/read'
+import { buildClaim, type ClaimResult } from '@/lib/giftaid'
 
 export interface Upload {
   name: string
@@ -76,4 +77,55 @@ export function mapToCashBook(t: Table, mapping: MappingLike, giftAid: { column:
     ])
   }
   return { fileName: t.fileName, sheetName: `${t.sheetName} (mapped)`, rows }
+}
+
+export interface AlreadyClaimed {
+  platform: string
+  donationId: string
+  claimRef: string
+}
+
+/** Asks the server which of these (platform, donation ID) pairs are already in a claim for the charity. */
+export type ClaimedLookup = (items: { platform: string; donationId: string }[]) => Promise<AlreadyClaimed[]>
+
+/**
+ * Cleans the tables and takes out every donation that is already claimed.
+ *
+ * Taking a row out can bring back a copy of it: some exports (e.g. LaunchGood's "Sheet1") repeat rows, and the
+ * engine skips a repeat only while the original is still there. So this keeps checking and taking out until the
+ * claim holds nothing already claimed. Each donation ID is asked about once.
+ */
+export async function withoutAlreadyClaimed(
+  tables: Table[],
+  lookup: ClaimedLookup,
+  maxPasses = 10
+): Promise<{ result: ClaimResult; blocked: (AlreadyClaimed & { name: string; amount: number })[] }> {
+  const key = (platform: string, id: unknown) => `${platform}\u0000${String(id)}`
+  const hasId = (r: { donationId: unknown }) => r.donationId !== null && r.donationId !== undefined && String(r.donationId) !== ''
+  const asked = new Set<string>()
+  const claimedRef = new Map<string, string>()
+  const blocked = new Map<string, AlreadyClaimed & { name: string; amount: number }>()
+
+  let current = tables
+  let result = buildClaim(current)
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const withIds = [...result.ready, ...result.overseas].filter(hasId)
+    const toAsk = withIds.filter((r) => !asked.has(key(r.platform, r.donationId)))
+    for (let i = 0; i < toAsk.length; i += 20000) {
+      const chunk = toAsk.slice(i, i + 20000).map((r) => ({ platform: r.platform, donationId: String(r.donationId) }))
+      chunk.forEach((c) => asked.add(key(c.platform, c.donationId)))
+      for (const c of await lookup(chunk)) claimedRef.set(key(c.platform, c.donationId), c.claimRef)
+    }
+    const hit = withIds.filter((r) => claimedRef.has(key(r.platform, r.donationId)))
+    if (!hit.length) break
+    for (const r of hit) {
+      const k = key(r.platform, r.donationId)
+      if (!blocked.has(k)) {
+        blocked.set(k, { name: `${r.firstName} ${r.lastName}`.trim(), amount: r.amount, platform: r.platform, donationId: String(r.donationId), claimRef: claimedRef.get(k) ?? '' })
+      }
+    }
+    current = blankSources(current, hit.map((r) => r.source))
+    result = buildClaim(current)
+  }
+  return { result, blocked: [...blocked.values()] }
 }

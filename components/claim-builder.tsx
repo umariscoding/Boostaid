@@ -15,9 +15,9 @@ import { useCharity } from '@/lib/store/charity'
 import { StatusBadge, apiJson, fmtPlainDate, gbp, type Status } from '@/components/claims/shared'
 import type { ClaimDto } from '@/lib/claims'
 import { giftAidOn } from '@/lib/claims'
-import { buildClaim, JustGivingError, PROFILES, readTables, type ClaimResult } from '@/lib/giftaid'
+import { JustGivingError, PROFILES, readTables, type ClaimResult } from '@/lib/giftaid'
 import type { Table } from '@/lib/giftaid/read'
-import { blankSources, mapToCashBook, tableKey, tableRecords, type Upload } from '@/lib/claim-flow'
+import { mapToCashBook, tableKey, tableRecords, withoutAlreadyClaimed, type AlreadyClaimed, type Upload } from '@/lib/claim-flow'
 import { assemblePack, buildSchedules, scheduleName, type NamedSchedule } from '@/lib/claim-pack'
 import { buildSimpleSheets, simpleSheetName } from '@/lib/claim-extras'
 import OptionalChecks from '@/components/claim-optional-checks'
@@ -107,34 +107,15 @@ export default function ClaimBuilder() {
     allTables.current = tables
     const effective = tables.map((t) => mapped[tableKey(t)] ?? t)
 
-    let res = buildClaim(effective)
-    let blockedRows: BlockedRow[] = []
-
     // Before anything is saved: donations already claimed for this charity are taken out of this claim
-    const withIds = [...res.ready, ...res.overseas].filter((r) => r.donationId !== null && r.donationId !== undefined && String(r.donationId) !== '')
-    if (withIds.length) {
-      const found = new Map<string, string>()
-      for (let i = 0; i < withIds.length; i += 20000) {
-        const chunk = withIds.slice(i, i + 20000)
-        const { claimed } = await apiJson<{ claimed: { platform: string; donationId: string; claimRef: string }[] }>('/api/batches/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ charityId, items: chunk.map((r) => ({ platform: r.platform, donationId: String(r.donationId) })) }),
-        })
-        for (const c of claimed) found.set(`${c.platform}\u0000${c.donationId}`, c.claimRef)
-      }
-      if (found.size) {
-        const hit = withIds.filter((r) => found.has(`${r.platform}\u0000${String(r.donationId)}`))
-        blockedRows = hit.map((r) => ({
-          name: `${r.firstName} ${r.lastName}`.trim(),
-          amount: r.amount,
-          platform: r.platform,
-          donationId: String(r.donationId),
-          claimRef: found.get(`${r.platform}\u0000${String(r.donationId)}`) ?? '',
-        }))
-        res = buildClaim(blankSources(effective, hit.map((r) => r.source)))
-      }
-    }
+    // (repeatedly, because taking one out can bring back a copy of it from another sheet)
+    const { result: res, blocked: blockedRows } = await withoutAlreadyClaimed(effective, async (items) =>
+      (await apiJson<{ claimed: AlreadyClaimed[] }>('/api/batches/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ charityId, items }),
+      })).claimed
+    )
 
     setUploads(ups)
     setResult(res)
@@ -245,7 +226,7 @@ export default function ClaimBuilder() {
       if (res.status === 409) {
         // Something was claimed in the meantime: re-check and show the updated claim
         await analyse(uploads, mappedTables, fileCharityId)
-        throw new Error('Some of these donations were claimed while you were reviewing. They have been taken out, so please check the numbers and save again.')
+        throw new Error('Some donations in this claim turned out to be claimed already. They have been taken out. Please check the numbers and save again.')
       }
       if (!res.ok) throw new Error(data?.error || `Server responded ${res.status}`)
 
