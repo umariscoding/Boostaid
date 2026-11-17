@@ -71,6 +71,11 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
       const status = body.status as ClaimStatus
       if (!STATUSES.includes(status)) throw new RangeError('Invalid status')
       if (status !== current.status) {
+        // HMRC takes one schedule per claim: record its reference when the claim is submitted
+        const ref = 'hmrcRef' in patch ? patch.hmrcRef : current.hmrcRef
+        if (status === 'submitted' && current.status === 'pending' && !ref) {
+          throw new RangeError('Enter the HMRC reference for this submission')
+        }
         const now = new Date()
         patch.status = status
         if (status === 'pending') {

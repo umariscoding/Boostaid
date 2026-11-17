@@ -34,7 +34,7 @@ export default function SubmitDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!claim) return
+    if (!claim || !hmrcRef.trim()) return
     setBusy(true)
     setError(null)
     try {
@@ -72,13 +72,14 @@ export default function SubmitDialog({
               maxLength={100}
               placeholder="e.g. the reference shown after the upload"
               autoComplete="off"
+              required
             />
-            <p className="mt-1.5 text-sm text-muted">Optional, but recommended. You can add or change it later on the claim.</p>
+            <p className="mt-1.5 text-sm text-muted">Needed for your records and if HMRC checks the claim. You can correct it later on the claim.</p>
           </div>
           {error && <div className="mt-4 rounded-xl border border-bad-line bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
           <div className="mt-6 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
-            <Button type="submit" variant="dark" disabled={busy}>
+            <Button type="submit" variant="dark" disabled={busy || !hmrcRef.trim()}>
               {busy && <Loader2 className="h-4 w-4 animate-spin" />} Mark submitted
             </Button>
           </div>
