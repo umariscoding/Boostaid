@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 import { asc, desc, eq, inArray, type SQL } from 'drizzle-orm'
 import { batches, charities, claimEvents, claims, donations, getDb } from '@/lib/db'
+import { giftAidOn } from '@/lib/claims'
 
 const fmtDateTime = (d: Date | null) =>
   d ? d.toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }) : ''
@@ -50,12 +51,13 @@ export async function buildAuditWorkbook(where?: SQL): Promise<Buffer> {
       'Submitted': fmtDateTime(c.submittedAt),
       'Received': fmtDateTime(c.receivedAt),
       Donations: c.donationCount,
-      'Gift Aid Amount (GBP)': Number(c.totalAmount),
+      'Donations (GBP)': Number(c.totalAmount),
+      'Gift Aid (GBP)': giftAidOn(Number(c.totalAmount)),
       'Source File': filename,
       Notes: c.notes ?? '',
     }))
   )
-  claimsSheet['!cols'] = [26, 18, 26, 10, 18, 12, 18, 18, 18, 10, 20, 30, 40].map((wch) => ({ wch }))
+  claimsSheet['!cols'] = [26, 18, 26, 10, 18, 12, 18, 18, 18, 10, 16, 14, 30, 40].map((wch) => ({ wch }))
   XLSX.utils.book_append_sheet(wb, claimsSheet, 'Claims')
 
   const donationsSheet = XLSX.utils.json_to_sheet(
