@@ -15,6 +15,13 @@ export const DELETE = withAuth<{ id: string }>(async (_req, { params }) => {
     const [charity] = await tx.select().from(charities).where(eq(charities.id, id)).for('update')
     if (!charity) return null
 
+    // HMRC expects Gift Aid records to be kept for 6 years: a charity with claims sent to HMRC can't be deleted
+    const sent = await tx.execute<{ n: number }>(sql`
+      select count(*)::int as n from claims cl join batches b on b.id = cl.batch_id
+      where b.charity_id = ${id} and cl.status in ('submitted', 'received')
+    `)
+    if (sent.rows[0].n > 0) return { locked: sent.rows[0].n } as const
+
     const counts = await tx.execute<{ claims: number; donations: number }>(sql`
       select
         (select count(*)::int from claims cl join batches b on b.id = cl.batch_id where b.charity_id = ${id}) as claims,
@@ -26,5 +33,11 @@ export const DELETE = withAuth<{ id: string }>(async (_req, { params }) => {
   })
 
   if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if ('locked' in result) {
+    return NextResponse.json(
+      { error: `This charity has ${result.locked} claim${result.locked === 1 ? '' : 's'} sent to HMRC. Gift Aid records must be kept for 6 years, so it can't be deleted.` },
+      { status: 409 }
+    )
+  }
   return NextResponse.json({ success: true, deleted: result })
 })
