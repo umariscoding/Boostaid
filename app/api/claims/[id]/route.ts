@@ -70,6 +70,10 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
     if ('status' in body) {
       const status = body.status as ClaimStatus
       if (!STATUSES.includes(status)) throw new RangeError('Invalid status')
+      // A claim HMRC has paid is locked for audit: it can't be moved back (and so can't be deleted)
+      if (current.status === 'received' && status !== 'received') {
+        throw new RangeError('This claim is marked received, so it is locked for audit and cannot be changed')
+      }
       if (status !== current.status) {
         // HMRC takes one schedule per claim: record its reference when the claim is submitted
         const ref = 'hmrcRef' in patch ? patch.hmrcRef : current.hmrcRef
