@@ -54,12 +54,14 @@ export async function assemblePack(result: ClaimResult, uploads: Upload[], sched
     .replace(',', '')
 
   const workbook = await buildClaimWorkbook(result, fingerprints, generated)
+  // On screen: the one-page summary. In the zip: the full summary with the audit detail page
   const summaryHtml = buildSummaryHtml(result, generated)
+  const fullSummaryHtml = buildSummaryHtml(result, generated, { audit: true })
 
   const zip = new JSZip()
   for (const s of schedules) zip.file(`1_Submit_to_HMRC/${s.name}`, s.data)
   zip.file('2_Claim_workbook.xlsx', workbook)
-  zip.file('3_Claim_summary.html', summaryHtml)
+  zip.file('3_Claim_summary.html', fullSummaryHtml)
   for (const u of uploads) zip.file(`4_Original_exports/${u.name}`, u.data)
   zip.file(
     '4_Original_exports/Fingerprints_SHA256.txt',

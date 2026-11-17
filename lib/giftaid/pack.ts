@@ -38,7 +38,7 @@ export async function buildClaimPack(files: UploadedFile[], templateOds: ArrayBu
   for (const f of result.files) zip.file(`1_Submit_to_HMRC/${f.name}`, await writeHmrcOds(templateOds, f, f.firstDate))
   zip.file('2_Claim_workbook.xlsx', await buildClaimWorkbook(result, fingerprints, generated))
   const summaryHtml = buildSummaryHtml(result, generated)
-  zip.file('3_Claim_summary.html', summaryHtml)
+  zip.file('3_Claim_summary.html', buildSummaryHtml(result, generated, { audit: true }))
   for (const f of files) zip.file(`4_Original_exports/${f.name}`, f.data)
   zip.file('4_Original_exports/Fingerprints_SHA256.txt',
     'Original files exactly as uploaded. Re-compute SHA-256 to prove they are unchanged.\n\n' +
