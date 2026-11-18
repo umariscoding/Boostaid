@@ -12,6 +12,8 @@ export interface ClaimDto {
   totalAmount: number
   /** What HMRC pays on those donations: 25%. */
   giftAidAmount: number
+  /** What HMRC actually paid (only once received). */
+  receivedAmount: number | null
   notes: string | null
   createdAt: string
   submittedAt: string | null
@@ -46,6 +48,7 @@ export function toClaimDto(
     donationCount: row.donationCount,
     totalAmount: Number(row.totalAmount),
     giftAidAmount: giftAidOn(Number(row.totalAmount)),
+    receivedAmount: row.receivedAmount == null ? null : Number(row.receivedAmount),
     notes: row.notes,
     createdAt: row.createdAt.toISOString(),
     submittedAt: row.submittedAt?.toISOString() ?? null,

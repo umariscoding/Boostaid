@@ -9,6 +9,7 @@ import { Card, PageHeader, Tabs, th, thr, td, tdr } from '@/components/ui/primit
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
 import SubmitDialog from '@/components/claims/submit-dialog'
+import ReceivedDialog from '@/components/claims/received-dialog'
 import NoCharityNotice from '@/components/charity/no-charity-notice'
 import { useCharity } from '@/lib/store/charity'
 import type { ClaimDto } from '@/lib/claims'
@@ -45,6 +46,7 @@ export default function ClaimsPage() {
   const [total, setTotal] = useState(0)
   const [fetching, setFetching] = useState(false)
   const [submitFor, setSubmitFor] = useState<ClaimDto | null>(null)
+  const [receivedFor, setReceivedFor] = useState<ClaimDto | null>(null)
 
   const load = useCallback(async (v: View, p: number, size: number, charity: string) => {
     setFetching(true)
@@ -193,6 +195,11 @@ export default function ClaimsPage() {
                         <td className={`${tdr} text-ink`}>{gbp(c.giftAidAmount)}</td>
                         <td className={`${td} text-ink whitespace-nowrap`}>
                           {c.status === 'received' ? fmtDay(c.receivedAt) : '—'}
+                          {c.status === 'received' && c.receivedAmount != null && (
+                            <div className={`text-xs ${c.receivedAmount === c.giftAidAmount ? 'text-muted' : 'text-warn'}`}>
+                              {gbp(c.receivedAmount)}{c.receivedAmount !== c.giftAidAmount && ` (expected ${gbp(c.giftAidAmount)})`}
+                            </div>
+                          )}
                           {c.status === 'submitted' && <div className="text-xs text-muted">sent {fmtDay(c.submittedAt)}</div>}
                         </td>
                         <td className={td}>
@@ -214,7 +221,7 @@ export default function ClaimsPage() {
                                 size="sm"
                                 variant={next.to === 'received' ? 'success' : 'dark'}
                                 disabled={busy}
-                                onClick={() => (next.to === 'submitted' ? setSubmitFor(c) : changeStatus(c.id, next.to))}
+                                onClick={() => (next.to === 'submitted' ? setSubmitFor(c) : next.to === 'received' ? setReceivedFor(c) : changeStatus(c.id, next.to))}
                               >
                                 {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                 {next.label}
@@ -248,6 +255,14 @@ export default function ClaimsPage() {
         />
       </Card>
 
+      <ReceivedDialog
+        claim={receivedFor}
+        onClose={() => setReceivedFor(null)}
+        onDone={() => {
+          load(view, page, pageSize, selectedId)
+          setTick((t) => t + 1)
+        }}
+      />
       <SubmitDialog
         claim={submitFor}
         onClose={() => setSubmitFor(null)}

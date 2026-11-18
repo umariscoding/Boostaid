@@ -7,6 +7,7 @@ import { ArrowLeft, Download, Trash2, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import SubmitDialog from '@/components/claims/submit-dialog'
+import ReceivedDialog from '@/components/claims/received-dialog'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import type { ClaimDto } from '@/lib/claims'
@@ -121,6 +122,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
 
   const ready = !!claim
   const [submitOpen, setSubmitOpen] = useState(false)
+  const [receivedOpen, setReceivedOpen] = useState(false)
 
   return (
     <>
@@ -179,7 +181,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                 detail: claim?.submittedAt ? `On ${fmtDay(claim.submittedAt)} · HMRC ref ${claim.hmrcRef || 'not added'}` : 'Not yet',
                 done: !!claim?.submittedAt,
               },
-              { label: '3 · Received', detail: claim?.receivedAt ? `${fmtDay(claim.receivedAt)} · ${gbp(claim.giftAidAmount)}` : 'Waiting for HMRC', done: !!claim?.receivedAt },
+              { label: '3 · Received', detail: claim?.receivedAt ? `${fmtDay(claim.receivedAt)} · ${gbp(claim.receivedAmount ?? claim.giftAidAmount)}${claim.receivedAmount != null && claim.receivedAmount !== claim.giftAidAmount ? ` (expected ${gbp(claim.giftAidAmount)})` : ''}` : 'Waiting for HMRC', done: !!claim?.receivedAt },
             ].map((t) => (
               <li key={t.label} className={`flex flex-col gap-1 rounded-xl p-3.5 ${t.done ? 'bg-good-soft text-good' : 'bg-[#f3f2f8] text-muted'}`}>
                 <span className="text-xs font-bold uppercase tracking-wide">{t.label}</span>
@@ -194,7 +196,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               <Button
                 variant={next.to === 'received' ? 'success' : 'dark'}
                 disabled={busy}
-                onClick={() => (next.to === 'submitted' ? setSubmitOpen(true) : patch({ status: next.to }))}
+                onClick={() => (next.to === 'submitted' ? setSubmitOpen(true) : next.to === 'received' ? setReceivedOpen(true) : patch({ status: next.to }))}
               >
                 {next.label}
               </Button>
@@ -209,6 +211,11 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                 <Download className="w-4 h-4" /> Download audit file
               </Button>
             </a>
+            <a href={`/api/claims/${id}/donations-export`}>
+              <Button variant="outline">
+                <Download className="w-4 h-4" /> Export donations (Excel)
+              </Button>
+            </a>
             {claim?.status === 'pending' && (
               <Button variant="danger" disabled={busy} onClick={remove} className="ml-auto">
                 <Trash2 className="w-4 h-4" /> Delete
@@ -221,7 +228,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
               <h3 className="font-display text-xl font-semibold text-ink">Details</h3>
               <div>
                 <label className={labelClass} htmlFor="hmrc">HMRC reference</label>
-                <input id="hmrc" className={inputClass} value={hmrcRef} onChange={(e) => setHmrcRef(e.target.value)} disabled={!ready} placeholder="Optional - the reference HMRC gives on submission" maxLength={100} />
+                <input id="hmrc" className={inputClass} value={hmrcRef} onChange={(e) => setHmrcRef(e.target.value)} disabled={!ready} placeholder="The reference HMRC gives on submission" maxLength={100} />
               </div>
               <div>
                 <label className={labelClass} htmlFor="notes">Notes</label>
@@ -320,6 +327,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
+      <ReceivedDialog claim={receivedOpen ? claim : null} onClose={() => setReceivedOpen(false)} onDone={() => load()} />
       <SubmitDialog claim={submitOpen ? claim : null} onClose={() => setSubmitOpen(false)} onDone={() => load()} />
     </>
   )
