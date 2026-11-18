@@ -35,10 +35,6 @@ export default function SubmitDialog({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!claim) return
-    if (!hmrcRef.trim()) {
-      setError('Type the HMRC reference to save.')
-      return
-    }
     setBusy(true)
     setError(null)
     try {
@@ -74,16 +70,15 @@ export default function SubmitDialog({
               value={hmrcRef}
               onChange={(e) => setHmrcRef(e.target.value)}
               maxLength={100}
-              required
               placeholder="e.g. the reference shown after the upload"
               autoComplete="off"
             />
-            <p className="mt-1.5 text-sm text-muted">Required. You can correct it later on the claim.</p>
+            <p className="mt-1.5 text-sm text-muted">Optional, but recommended. You can add or change it later on the claim.</p>
           </div>
           {error && <div className="mt-4 rounded-xl border border-bad-line bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
           <div className="mt-6 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
-            <Button type="submit" variant="dark" disabled={busy || !hmrcRef.trim()}>
+            <Button type="submit" variant="dark" disabled={busy}>
               {busy && <Loader2 className="h-4 w-4 animate-spin" />} Mark submitted
             </Button>
           </div>

@@ -87,8 +87,6 @@ export const claims = pgTable(
     totalAmount: numeric('total_amount', { precision: 12, scale: 2 }).notNull(),
     /** Optional reference issued by HMRC once the claim is submitted. */
     hmrcRef: text('hmrc_ref'),
-    /** What HMRC actually paid, typed in when the claim is marked received. */
-    receivedAmount: numeric('received_amount', { precision: 12, scale: 2 }),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     submittedAt: timestamp('submitted_at', { withTimezone: true }),

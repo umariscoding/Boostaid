@@ -8,7 +8,7 @@ import { useCharity } from '@/lib/store/charity'
 import { apiJson, gbp, type Status } from './shared'
 import { giftAidOn } from '@/lib/claims'
 
-type Summary = Record<Status, { count: number; amount: number; paid?: number }>
+type Summary = Record<Status, { count: number; amount: number }>
 
 // Order and colours follow the design: money in (blue), waiting (amber), ready to go (green)
 const TILES: { status: Status; label: string; hint: string; tone: 'warn' | 'info' | 'good' }[] = [
@@ -47,7 +47,7 @@ export default function SummaryStrip({ refreshKey = 0, linked = true }: { refres
           <StatTile
             label={label}
             tone={tone}
-            value={s ? gbp(status === 'received' && s.paid != null ? s.paid : giftAidOn(s.amount)) : <Skeleton className="h-10 w-40" />}
+            value={s ? gbp(giftAidOn(s.amount)) : <Skeleton className="h-10 w-40" />}
             caption={
               s ? (
                 `${s.count.toLocaleString()} claim${s.count === 1 ? '' : 's'} · ${hint}`

@@ -64,39 +64,24 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
     if (!current) return null
 
     const patch: Partial<typeof claims.$inferInsert> = {}
-    if ('hmrcRef' in body) {
-      const ref = body.hmrcRef ? String(body.hmrcRef).trim().slice(0, 100) : null
-      // Once a claim has gone to HMRC its reference can be changed but not removed
-      if (!ref && current.status !== 'pending') throw new RangeError('The HMRC reference is required once a claim is submitted')
-      patch.hmrcRef = ref
-    }
+    if ('hmrcRef' in body) patch.hmrcRef = body.hmrcRef ? String(body.hmrcRef).trim().slice(0, 100) : null
     if ('notes' in body) patch.notes = body.notes ? String(body.notes).trim().slice(0, 2000) : null
 
     if ('status' in body) {
       const status = body.status as ClaimStatus
       if (!STATUSES.includes(status)) throw new RangeError('Invalid status')
       if (status !== current.status) {
-        if (status !== 'pending' && !(patch.hmrcRef ?? (('hmrcRef' in body) ? null : current.hmrcRef))) {
-          throw new RangeError('Enter the HMRC reference before marking the claim as submitted')
-        }
         const now = new Date()
         patch.status = status
         if (status === 'pending') {
           patch.submittedAt = null
           patch.receivedAt = null
-          patch.receivedAmount = null
         } else if (status === 'submitted') {
           patch.submittedAt = current.submittedAt ?? now
           patch.receivedAt = null
-          patch.receivedAmount = null
         } else {
-          const paid = Number(body.receivedAmount)
-          if (body.receivedAmount === undefined || body.receivedAmount === '' || !Number.isFinite(paid) || paid < 0 || paid > 1e9) {
-            throw new RangeError('Enter the amount HMRC actually paid')
-          }
           patch.submittedAt = current.submittedAt ?? now
           patch.receivedAt = now
-          patch.receivedAmount = (Math.round(paid * 100) / 100).toFixed(2)
         }
         await tx.insert(claimEvents).values({
           claimId: id,

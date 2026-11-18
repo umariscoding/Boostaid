@@ -74,13 +74,3 @@ export async function assemblePack(result: ClaimResult, uploads: Upload[], sched
   )
   return { zip: await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' }), workbook, summaryHtml }
 }
-
-/**
- * The one-page version of the summary for on-screen viewing: everything before the audit detail page.
- * The full version (with the audit detail) stays in the downloaded pack.
- */
-export function briefSummaryHtml(fullHtml: string): string {
-  const i = fullHtml.indexOf('<div class=page2>')
-  if (i < 0) return fullHtml
-  return fullHtml.slice(0, i) + '</body></html>'
-}

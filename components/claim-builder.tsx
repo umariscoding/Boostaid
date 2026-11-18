@@ -18,7 +18,7 @@ import { giftAidOn } from '@/lib/claims'
 import { buildClaim, JustGivingError, PROFILES, readTables, type ClaimResult } from '@/lib/giftaid'
 import type { Table } from '@/lib/giftaid/read'
 import { blankSources, mapToCashBook, tableKey, tableRecords, type Upload } from '@/lib/claim-flow'
-import { assemblePack, briefSummaryHtml, buildSchedules, scheduleName, type NamedSchedule } from '@/lib/claim-pack'
+import { assemblePack, buildSchedules, scheduleName, type NamedSchedule } from '@/lib/claim-pack'
 import { buildSimpleSheets, simpleSheetName } from '@/lib/claim-extras'
 import OptionalChecks from '@/components/claim-optional-checks'
 
@@ -642,7 +642,7 @@ export default function ClaimBuilder() {
                     <Button variant="outline" onClick={() => download('2_Claim_workbook.xlsx', saved.workbook as BlobPart, XLSX_MIME)}>
                       <FileSpreadsheet className="h-4 w-4 text-info" /> Claim workbook (.xlsx)
                     </Button>
-                    <Button variant="outline" onClick={() => window.open(URL.createObjectURL(new Blob([briefSummaryHtml(saved.summaryHtml)], { type: 'text/html' })), '_blank')}>
+                    <Button variant="outline" onClick={() => window.open(URL.createObjectURL(new Blob([saved.summaryHtml], { type: 'text/html' })), '_blank')}>
                       <FileText className="h-4 w-4" /> Summary (print or save as PDF)
                     </Button>
                   </div>
