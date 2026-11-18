@@ -211,6 +211,11 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                 <Download className="w-4 h-4" /> Download audit file
               </Button>
             </a>
+            <a href={`/api/claims/${id}/donations-export`}>
+              <Button variant="outline">
+                <Download className="w-4 h-4" /> Export donations (Excel)
+              </Button>
+            </a>
             {claim?.status === 'pending' && (
               <Button variant="danger" disabled={busy} onClick={remove} className="ml-auto">
                 <Trash2 className="w-4 h-4" /> Delete
