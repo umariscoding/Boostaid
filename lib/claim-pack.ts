@@ -29,13 +29,12 @@ export function scheduleName(plan: HmrcFilePlan, ref: string): string {
   return `${plan.name.replace(/\.ods$/i, '')} - ${money(plan.total)} - ${ref}.ods`
 }
 
-/** Fills HMRC's own template for every planned file. Box 1 is that file's own earliest donation date. */
+/** Fills HMRC's own template for every planned file. Box 1 is the earliest date of that kind (UK / overseas). */
 export async function buildSchedules(result: ClaimResult, templateOds: Uint8Array): Promise<Schedule[]> {
+  const earliest = (kind: 'UK' | 'Overseas') =>
+    result.files.filter((f) => f.kind === kind).map((f) => f.firstDate).sort()[0]
   const out: Schedule[] = []
-  for (const plan of result.files) {
-    const box1 = plan.rows.map((r) => r.date!).filter(Boolean).sort()[0] ?? plan.firstDate
-    out.push({ plan, data: await writeHmrcOds(templateOds, plan, box1) })
-  }
+  for (const plan of result.files) out.push({ plan, data: await writeHmrcOds(templateOds, plan, earliest(plan.kind)) })
   return out
 }
 

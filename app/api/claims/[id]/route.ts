@@ -75,7 +75,6 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
     if ('status' in body) {
       const status = body.status as ClaimStatus
       if (!STATUSES.includes(status)) throw new RangeError('Invalid status')
-      if (current.status === 'received' && status !== 'received') throw new RangeError('A received claim is locked and cannot be moved back')
       if (status !== current.status) {
         if (status !== 'pending' && !(patch.hmrcRef ?? (('hmrcRef' in body) ? null : current.hmrcRef))) {
           throw new RangeError('Enter the HMRC reference before marking the claim as submitted')
