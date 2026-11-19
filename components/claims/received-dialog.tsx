@@ -7,8 +7,9 @@ import { Dialog } from '@/components/ui/dialog'
 import { inputClass, labelClass } from '@/components/ui/primitives'
 import { apiJson, gbp } from '@/components/claims/shared'
 import type { ClaimDto } from '@/lib/claims'
+import { feeFigures } from '@/lib/fees'
 
-type Target = { id: string; ref: string; giftAidAmount: number }
+type Target = { id: string; ref: string; giftAidAmount: number; /** Gift Aid on donations BoostAid recovered in this claim (the fee is worked out on it). */ recoveredGiftAid?: number }
 
 /**
  * "Mark received" asks for the amount HMRC actually paid. It can be a few pounds off the claim
@@ -88,6 +89,11 @@ function ReceivedForm({ claim, onClose, onDone, endpoint }: { claim: Target; onC
               ? 'Matches the claim.'
               : `${gbp(Math.abs(diff))} ${diff < 0 ? 'less' : 'more'} than expected.`}
         </p>
+        {valid && !!claim.recoveredGiftAid && (
+          <p className="mt-2 rounded-xl bg-info-soft px-4 py-3 text-sm text-info">
+            BoostAid fee on this claim: {gbp(feeFigures(claim.recoveredGiftAid, claim.giftAidAmount, amount).fee)} (5% of the recovered Gift Aid HMRC paid)
+          </p>
+        )}
       </div>
       {error && <div className="mt-4 rounded-xl border border-bad-line bg-bad-soft px-4 py-3 text-sm text-bad">{error}</div>}
       <div className="mt-6 flex justify-end gap-3">

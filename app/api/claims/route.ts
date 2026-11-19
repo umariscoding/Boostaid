@@ -50,6 +50,8 @@ export const GET = withAuth(async (req) => {
       charityName: charities.name,
       periodFrom: sql<string | null>`(select min(${donations.donationDate})::text from ${donations} where ${donations.claimId} = ${claims.id})`,
       periodTo: sql<string | null>`(select max(${donations.donationDate})::text from ${donations} where ${donations.claimId} = ${claims.id})`,
+      recAmount: sql<string>`(select coalesce(sum(${donations.amount}), 0)::text from ${donations} where ${donations.claimId} = ${claims.id} and ${donations.recovered})`,
+      recCount: sql<number>`(select count(*)::int from ${donations} where ${donations.claimId} = ${claims.id} and ${donations.recovered})`,
     })
     .from(claims)
     .innerJoin(batches, eq(batches.id, claims.batchId))
@@ -60,7 +62,7 @@ export const GET = withAuth(async (req) => {
     .offset((page - 1) * pageSize)
 
   return NextResponse.json({
-    claims: rows.map((r) => toClaimDto(r.claim, r.filename, { from: r.periodFrom, to: r.periodTo }, { id: r.charityId, name: r.charityName })),
+    claims: rows.map((r) => toClaimDto(r.claim, r.filename, { from: r.periodFrom, to: r.periodTo }, { id: r.charityId, name: r.charityName }, { amount: Number(r.recAmount), count: r.recCount })),
     summary,
     total,
     page,

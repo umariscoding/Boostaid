@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/session'
 
-const PUBLIC_PREFIXES = ['/login', '/api/auth/login', '/_next/', '/favicon.ico', '/icon.svg']
+// /confirm is the donor's form (reached from an email, no login); /api/cron is protected by its own secret
+const PUBLIC_PREFIXES = ['/login', '/api/auth/login', '/confirm/', '/api/confirm/', '/api/cron/', '/_next/', '/favicon.ico', '/icon.svg']
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

@@ -12,8 +12,10 @@
     "db:studio": "drizzle-kit studio",
     "giftaid:verify": "tsx scripts/giftaid-verify.ts",
     "samples:make": "tsx scripts/make-samples.ts samples",
+    "recovery:verify": "tsx scripts/recovery-verify.ts",
     "gasds:verify": "tsx scripts/gasds-verify.ts",
     "samples:check": "tsx scripts/check-samples.ts samples",
+    "user:role": "tsx scripts/set-role.ts",
     "user:create": "tsx scripts/create-user.ts"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.23.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",

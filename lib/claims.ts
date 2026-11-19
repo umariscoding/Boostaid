@@ -29,6 +29,9 @@ export interface ClaimDto {
   /** Earliest / latest donation date in the claim (yyyy-MM-dd). */
   periodFrom?: string | null
   periodTo?: string | null
+  /** Donations in this claim that BoostAid recovered by emailing the donor (the 5% fee applies to these): their total and count. */
+  recoveredAmount: number
+  recoveredCount: number
 }
 
 export const GIFT_AID_RATE = 0.25
@@ -38,7 +41,8 @@ export function toClaimDto(
   row: ClaimRow,
   sourceFile?: string,
   period?: { from: string | null; to: string | null },
-  charity?: { id: string; name: string }
+  charity?: { id: string; name: string },
+  recovered?: { amount: number; count: number }
 ): ClaimDto {
   return {
     id: row.id,
@@ -59,6 +63,8 @@ export function toClaimDto(
     sourceFile,
     periodFrom: period?.from ?? null,
     periodTo: period?.to ?? null,
+    recoveredAmount: recovered?.amount ?? 0,
+    recoveredCount: recovered?.count ?? 0,
     charityId: charity?.id,
     charityName: charity?.name,
   }

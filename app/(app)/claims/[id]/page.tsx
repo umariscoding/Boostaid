@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Card, inputClass, labelClass, th, thr, td, tdr } from '@/components/ui/primitives'
 import SubmitDialog from '@/components/claims/submit-dialog'
 import ReceivedDialog from '@/components/claims/received-dialog'
+import RecoverySummary from '@/components/claims/recovery-summary'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import type { ClaimDto } from '@/lib/claims'
+import { giftAidOn } from '@/lib/claims'
 import {
   NEXT_STATUS,
   PREV_STATUS,
@@ -33,6 +35,9 @@ interface DonationRow {
   postcode: string
   donationDate: string | null
   amount: number
+  recovered?: boolean
+  emailSentAt?: string | null
+  repliedAt?: string | null
 }
 interface EventRow {
   id: string
@@ -270,6 +275,8 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
             </Card>
           </div>
 
+          {claim && <RecoverySummary claim={claim} />}
+
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
               <h3 className="font-display text-xl font-semibold text-ink">Donations in this claim</h3>
@@ -291,7 +298,10 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
                     <tbody>
                       {shown.slice((page - 1) * pageSize, page * pageSize).map((d) => (
                         <tr key={d.id} className="border-b border-line-soft last:border-0">
-                          <td className={`${td} py-3 text-ink`}>{[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}</td>
+                          <td className={`${td} py-3 text-ink`}>
+                            {[d.title, d.firstName, d.lastName].filter(Boolean).join(' ')}
+                            {d.recovered && <span className="ml-2 rounded-md bg-good-pill px-2 py-0.5 text-xs font-semibold text-good" title={d.repliedAt ? `Emailed ${fmtDay(d.emailSentAt ?? null)}, replied ${fmtDay(d.repliedAt)}` : undefined}>Recovered</span>}
+                          </td>
                           <td className={`${td} py-3 text-ink`}>{d.address}</td>
                           <td className={`${td} py-3 text-ink`}>{d.postcode}</td>
                           <td className={`${td} py-3 text-ink whitespace-nowrap`}>{fmtPlainDate(d.donationDate)}</td>
@@ -328,7 +338,7 @@ export default function ClaimDetailPage({ params }: { params: Promise<{ id: stri
       )}
 
       <SubmitDialog claim={submitOpen ? claim : null} onClose={() => setSubmitOpen(false)} onDone={() => load()} />
-      <ReceivedDialog claim={receivedOpen ? claim : null} onClose={() => setReceivedOpen(false)} onDone={() => load()} />
+      <ReceivedDialog claim={receivedOpen && claim ? { id: claim.id, ref: claim.ref, giftAidAmount: claim.giftAidAmount, recoveredGiftAid: giftAidOn(claim.recoveredAmount) } : null} onClose={() => setReceivedOpen(false)} onDone={() => load()} />
     </>
   )
 }

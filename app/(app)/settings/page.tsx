@@ -207,6 +207,7 @@ export default function SettingsPage() {
               <thead>
                 <tr className="border-b border-line">
                   <th className={th}>Charity</th>
+                  <th className={th}>Contact email</th>
                   <th className={thr}>Claims</th>
                   <th className={thr}>Donations</th>
                   <th className={thr}>Donated</th>
@@ -218,6 +219,7 @@ export default function SettingsPage() {
                 {charities.map((c) => (
                   <tr key={c.id} className="border-b border-line-soft last:border-0">
                     <td className={`${td} text-ink`}>{c.name}</td>
+                    <td className={td}><ContactEmail charity={c} onSaved={refresh} /></td>
                     <td className={`${tdr} text-ink`}>{c.claimCount.toLocaleString()}</td>
                     <td className={`${tdr} text-ink`}>{c.donationCount.toLocaleString()}</td>
                     <td className={`${tdr} text-ink`}>{gbp(c.donated)}</td>
@@ -289,5 +291,39 @@ export default function SettingsPage() {
         )}
       </Dialog>
     </>
+  )
+}
+
+/** The charity's own email. Donors' replies go here, and BoostAid's invoices are sent here. Saves when you leave the box. */
+function ContactEmail({ charity, onSaved }: { charity: CharityInfo; onSaved: () => Promise<unknown> }) {
+  const [value, setValue] = useState(charity.contactEmail)
+  const [state, setState] = useState<'idle' | 'saving' | 'saved' | string>('idle')
+  const save = async () => {
+    const v = value.trim()
+    if (v === charity.contactEmail) return
+    setState('saving')
+    try {
+      await apiJson(`/api/charities/${charity.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contactEmail: v }) })
+      await onSaved()
+      setState('saved')
+      setTimeout(() => setState('idle'), 2000)
+    } catch (e) {
+      setState((e as Error).message)
+    }
+  }
+  return (
+    <div>
+      <input
+        aria-label={`Contact email for ${charity.name}`}
+        className={`${inputClass} h-10 min-w-[220px]`}
+        type="email"
+        value={value}
+        placeholder="e.g. info@charity.org"
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        maxLength={200}
+      />
+      {state !== 'idle' && <div className={`mt-1 text-xs ${state === 'saved' || state === 'saving' ? 'text-muted' : 'text-bad'}`}>{state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state}</div>}
+    </div>
   )
 }

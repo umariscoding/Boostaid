@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AlertCircle, ChevronRight, Columns, Download, Eye, FileSpreadsheet, FileText, FileUp, Plus, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, PageHeader, Pill, StatTile, Tabs, td, tdr, th, thr } from '@/components/ui/primitives'
@@ -21,6 +22,10 @@ import { mapToCashBook, tableKey, tableRecords, withoutAlreadyClaimed, type Alre
 import { assemblePack, buildSchedules, scheduleName, type NamedSchedule } from '@/lib/claim-pack'
 import { buildSimpleSheets, simpleSheetName } from '@/lib/claim-extras'
 import OptionalChecks from '@/components/claim-optional-checks'
+import RecoveryPanel from '@/components/recovery/recovery-panel'
+import { heldBackRows, rowKey } from '@/lib/recovery'
+import { CASH_BOOK_HEADINGS } from '@/lib/claim-flow'
+import type { RecoveryRowDto } from '@/app/api/recovery/route'
 
 type Phase = 'idle' | 'reading' | 'review' | 'saving' | 'saved'
 
@@ -56,6 +61,22 @@ const ODS = 'application/vnd.oasis.opendocument.spreadsheet'
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 const tick = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/**
+ * Donations the donor fixed ("Ready – recovered") join a claim as one more file, laid out like HMRC's cash book, so the
+ * normal cleaning rules and schedule building apply. Row N of this file is `pool[N - 2]`.
+ */
+const RECOVERED_FILE = 'Recovered_by_BoostAid.csv'
+const csvCell = (v: unknown) => { const t = String(v ?? ''); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t }
+function recoveredUpload(pool: RecoveryRowDto[]): Upload {
+  const lines = [CASH_BOOK_HEADINGS.join(',')]
+  for (const r of pool) {
+    const f = r.fixed!
+    lines.push([f.title, f.first, f.last, f.house, f.postcode, r.date ?? '', r.amount.toFixed(2)].map(csvCell).join(','))
+  }
+  return { name: RECOVERED_FILE, data: new TextEncoder().encode(lines.join('\n')) }
+}
+const isRecoveredSource = (source: string) => source.startsWith(`${RECOVERED_FILE}:CSV!`)
+
 function download(name: string, data: BlobPart, type: string) {
   const url = URL.createObjectURL(new Blob([data], { type }))
   const a = document.createElement('a')
@@ -84,6 +105,10 @@ export default function ClaimBuilder() {
   const [submitFor, setSubmitFor] = useState<{ id: string; ref: string; hmrcRef: string | null } | null>(null)
   const [downloaded, setDownloaded] = useState(false)
   const [message, setMessage] = useState('Reading your files...')
+  // Donations fixed by their donors that could still join this claim, and the ones that did (in file order)
+  const [poolAvail, setPoolAvail] = useState<RecoveryRowDto[]>([])
+  const [panelKey, setPanelKey] = useState(0)
+  const poolInClaim = useRef<RecoveryRowDto[]>([])
   const tableCache = useRef(new Map<string, Table[]>())
   const allTables = useRef<Table[]>([])
 
@@ -116,6 +141,15 @@ export default function ClaimBuilder() {
         body: JSON.stringify({ charityId, items }),
       })).claimed
     )
+
+    // Donations fixed by donors that could join this claim (not ones already in it, and not ones this file now has ready)
+    const hasPool = ups.some((u) => u.name === RECOVERED_FILE)
+    if (hasPool) setPoolAvail([])
+    else {
+      const readyKeys = new Set([...res.ready, ...res.overseas].map((r) => rowKey(r.platform, r.donationId == null ? '' : String(r.donationId))))
+      const pool = await fetchPool(charityId)
+      setPoolAvail(pool.filter((r) => !readyKeys.has(rowKey(r.platform, r.donationId))))
+    }
 
     setUploads(ups)
     setResult(res)
@@ -169,7 +203,53 @@ export default function ClaimBuilder() {
     await run(() => analyse(uploads, mapped, fileCharityId), 'Applying the Gift Aid rules...')
   }
 
+  const fetchPool = async (charityId: string): Promise<RecoveryRowDto[]> => {
+    try {
+      const d = await apiJson<{ rows: RecoveryRowDto[] }>(`/api/recovery?charity=${charityId}`)
+      return d.rows.filter((r) => r.status === 'recovered' && r.fixed)
+    } catch {
+      return []
+    }
+  }
+
+  /** A claim made only of the donations donors fixed. */
+  const startRecovered = async () => {
+    const charityId = uploadTargetId
+    if (!charityId) return
+    await run(async () => {
+      const pool = await fetchPool(charityId)
+      if (!pool.length) throw new Error('There are no recovered donations waiting. Refresh and try again.')
+      poolInClaim.current = pool
+      setMappedTables({})
+      setSaved(null)
+      setFileCharityId(charityId)
+      await analyse([recoveredUpload(pool)], {}, charityId)
+    }, 'Preparing your recovered donations...')
+  }
+
+  /** Adds the donations donors fixed to the claim being reviewed. */
+  const addRecovered = async () => {
+    if (!poolAvail.length) return
+    await run(async () => {
+      poolInClaim.current = poolAvail
+      await analyse([...uploads.filter((u) => u.name !== RECOVERED_FILE), recoveredUpload(poolAvail)], mappedTables, fileCharityId)
+    }, 'Adding the recovered donations to this claim...')
+  }
+
+  // /?recovered=1 (from the Claims page) goes straight to a claim made of the donations donors fixed
+  const params = useSearchParams()
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (params.get('recovered') === '1' && !autoStarted.current && loaded && uploadTargetId && phase === 'idle') {
+      autoStarted.current = true
+      startRecovered()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, loaded, uploadTargetId, phase])
+
   const reset = () => {
+    poolInClaim.current = []
+    setPoolAvail([])
     chooseUploadTarget('')
     setPhase('idle')
     setUploads([])
@@ -207,19 +287,26 @@ export default function ClaimBuilder() {
           claims: result.files.map((f) => ({
             kind: f.kind,
             fileName: f.name,
-            donations: f.rows.map((r) => ({
-              title: r.title,
-              firstName: r.firstName,
-              lastName: r.lastName,
-              address: r.house,
-              postcode: r.postcode,
-              donationDate: r.date,
-              amount: r.amount,
-              platform: r.platform,
-              donationId: r.donationId === null || r.donationId === undefined ? '' : String(r.donationId),
-              hmrcRow: r.hmrcRow,
-            })),
+            donations: f.rows.map((r) => {
+              // A donation the donor fixed keeps its real platform and ID, and is tagged so the 5% fee can be worked out
+              const rec = isRecoveredSource(r.source) ? poolInClaim.current[Number(r.source.slice(r.source.lastIndexOf('!') + 1)) - 2] : undefined
+              return {
+                title: r.title,
+                firstName: r.firstName,
+                lastName: r.lastName,
+                address: r.house,
+                postcode: r.postcode,
+                donationDate: r.date,
+                amount: r.amount,
+                platform: rec ? rec.platform : r.platform,
+                donationId: rec ? rec.donationId : r.donationId === null || r.donationId === undefined ? '' : String(r.donationId),
+                hmrcRow: r.hmrcRow,
+                recoveredRowId: rec?.id,
+              }
+            }),
           })),
+          // Everything held back is kept, with the donor's email, so it can be emailed (rows from the recovered file are already stored)
+          reviewRows: heldBackRows(result.review.filter((r) => !isRecoveredSource(r.source)), allTables.current),
         }),
       })
       const data = await res.json().catch(() => null)
@@ -246,6 +333,7 @@ export default function ClaimBuilder() {
         summaryHtml: pack.summaryHtml,
       })
       setClaimState({})
+      setPanelKey((k) => k + 1)
       setSavedTab('files')
       setDownloaded(false)
       setPhase('saved')
@@ -360,6 +448,7 @@ export default function ClaimBuilder() {
 
             {!needsChoice && (
               <>
+                {uploadTargetId && <RecoveryPanel charityId={uploadTargetId} refreshKey={panelKey} onCreateClaim={startRecovered} />}
                 <div className="grid gap-5 md:grid-cols-3">
                   {[
                     { icon: Columns, title: '1. Upload', text: 'Add your exports. We recognise the platform from its columns.' },
@@ -399,6 +488,16 @@ export default function ClaimBuilder() {
         {phase === 'review' && result && !mapperTable && (
           <>
             <FilesRead result={result} />
+
+            {poolAvail.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-good-line bg-good-soft px-6 py-5 text-good">
+                <div>
+                  <div className="font-display text-xl font-bold tabular-nums">{gbp(giftAidOn(poolAvail.reduce((a, r) => a + r.amount, 0)))} recovered and waiting</div>
+                  <div>{poolAvail.length} donation{poolAvail.length === 1 ? '' : 's'} fixed by donors. Add {poolAvail.length === 1 ? 'it' : 'them'} to this claim?</div>
+                </div>
+                <Button variant="success" onClick={addRecovered}>Add to this claim</Button>
+              </div>
+            )}
 
             <ResultTiles
               result={result}
@@ -677,6 +776,7 @@ export default function ClaimBuilder() {
         />
 
         {phase === 'saved' && !saved && <Skeleton className="h-40 w-full" />}
+        {phase === 'saved' && saved && fileCharityId && <RecoveryPanel charityId={fileCharityId} refreshKey={panelKey} />}
       </div>
     </>
   )

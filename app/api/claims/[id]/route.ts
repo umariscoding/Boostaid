@@ -4,6 +4,7 @@ import { batches, charities, claimEvents, claims, donations, getDb } from '@/lib
 import type { ClaimStatus } from '@/lib/db'
 import { UUID_RE, withAuth } from '@/lib/api'
 import { toClaimDto } from '@/lib/claims'
+import { notifyClaimEvent } from '@/lib/admin-db'
 
 type Params = { id: string }
 
@@ -33,7 +34,8 @@ export const GET = withAuth<Params>(async (_req, { params }) => {
         const dates = rows.map((d) => d.donationDate).filter((d): d is string => !!d).sort()
         return { from: dates[0] ?? null, to: dates[dates.length - 1] ?? null }
       })(),
-      { id: row.charityId, name: row.charityName }
+      { id: row.charityId, name: row.charityName },
+      { amount: rows.filter((d) => d.recovered).reduce((a, d) => a + Number(d.amount), 0), count: rows.filter((d) => d.recovered).length }
     ),
     donations: rows.map((d) => ({
       id: d.id,
@@ -44,6 +46,9 @@ export const GET = withAuth<Params>(async (_req, { params }) => {
       postcode: d.postcode,
       donationDate: d.donationDate,
       amount: Number(d.amount),
+      recovered: d.recovered,
+      emailSentAt: d.emailSentAt?.toISOString() ?? null,
+      repliedAt: d.repliedAt?.toISOString() ?? null,
     })),
     events: events.map((e) => ({ id: e.id, status: e.status, at: e.at.toISOString(), note: e.note })),
   })
@@ -59,6 +64,7 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
   if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
 
   const db = getDb()
+  let movedTo: 'submitted' | 'received' | null = null
   const updated = await db.transaction(async (tx) => {
     const [current] = await tx.select().from(claims).where(eq(claims.id, id)).for('update')
     if (!current) return null
@@ -85,6 +91,7 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
           if (!Number.isFinite(amt) || amt <= 0 || amt > 10_000_000) throw new RangeError('Enter the amount HMRC actually paid')
           patch.receivedAmount = (Math.round(amt * 100) / 100).toFixed(2)
         }
+        if (status === 'submitted' || status === 'received') movedTo = status
         const now = new Date()
         patch.status = status
         if (status === 'pending') {
@@ -112,6 +119,8 @@ export const PATCH = withAuth<Params>(async (req, { params }) => {
   })
 
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // BoostAid's owner is told when a claim with recovered Gift Aid is submitted or received (never blocks the change)
+  if (movedTo) await notifyClaimEvent(id, movedTo).catch((e) => console.error(e))
   return NextResponse.json({ claim: toClaimDto(updated) })
 })
 

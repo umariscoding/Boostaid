@@ -1,5 +1,11 @@
+import { Suspense } from 'react'
 import ClaimBuilder from '@/components/claim-builder'
 
 export default function Home() {
-  return <ClaimBuilder />
+  // useSearchParams (for /?recovered=1) needs a Suspense boundary
+  return (
+    <Suspense>
+      <ClaimBuilder />
+    </Suspense>
+  )
 }

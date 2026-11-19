@@ -30,6 +30,8 @@ export const users = pgTable(
     email: text('email').notNull(),
     name: text('name').notNull().default(''),
     passwordHash: text('password_hash').notNull(),
+    /** 'admin' is BoostAid's own owner login (admin page); everyone else is 'user'. */
+    role: text('role').notNull().default('user'),
     /** Wrong passwords in a row; after 5 the account is locked for 15 minutes. */
     failedAttempts: integer('failed_attempts').notNull().default(0),
     lockedUntil: timestamp('locked_until', { withTimezone: true }),
@@ -48,6 +50,8 @@ export const charities = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
+    /** The charity's own email: replies to donor emails go here, and BoostAid's invoices are sent here. */
+    contactEmail: text('contact_email'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('charities_name_lower_unique').on(sql`lower(${t.name})`)]
@@ -137,6 +141,10 @@ export const donations = pgTable(
     platformDonationId: text('platform_donation_id'),
     /** Row in the HMRC schedule (data starts at row 25). */
     hmrcRow: integer('hmrc_row'),
+    /** Permanent tag: this donation was held back and fixed because the donor replied to BoostAid's email (the 5% fee applies). */
+    recovered: boolean('recovered').notNull().default(false),
+    emailSentAt: timestamp('email_sent_at', { withTimezone: true }),
+    repliedAt: timestamp('replied_at', { withTimezone: true }),
   },
   (t) => [
     index('donations_claim_idx').on(t.claimId),
@@ -234,4 +242,128 @@ export const gasdsYears = pgTable(
     giftAidElsewhere: numeric('gift_aid_elsewhere', { precision: 12, scale: 2 }).notNull().default('0'),
   },
   (t) => [uniqueIndex('gasds_years_unique').on(t.charityId, t.taxYear)]
+)
+
+// ---------------------------------------------------------------------------------------------------
+// Gift Aid recovery: email donors whose details are missing; their reply fixes the row
+// ---------------------------------------------------------------------------------------------------
+
+/** none = needs review, sent/reminded = waiting for the donor, no_response = gave up, recovered = fixed, claimed = in a claim. */
+export const recoveryStatus = ['none', 'sent', 'reminded', 'no_response', 'recovered', 'claimed'] as const
+export type RecoveryStatus = (typeof recoveryStatus)[number]
+
+/** A donation that was held back (Needs review) when a file was cleaned. One per charity + platform + donation ID. */
+export const reviewRows = pgTable(
+  'review_rows',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id').notNull().references(() => charities.id, { onDelete: 'cascade' }),
+    /** The same key as the already-claimed check: platform + donation ID (or file:row when the file has no ID). */
+    platform: text('platform').notNull().default(''),
+    donationId: text('donation_id').notNull(),
+    donationDate: date('donation_date'),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    title: text('title').notNull().default(''),
+    firstName: text('first_name').notNull().default(''),
+    lastName: text('last_name').notNull().default(''),
+    house: text('house').notNull().default(''),
+    postcode: text('postcode').notNull().default(''),
+    reason: text('reason').notNull().default(''),
+    sourceFile: text('source_file').notNull().default(''),
+    /** The donor's email from the platform export. */
+    email: text('email'),
+    status: text('status').notNull().default('none'),
+    requestId: uuid('request_id'),
+    emailSentAt: timestamp('email_sent_at', { withTimezone: true }),
+    reminderAt: timestamp('reminder_at', { withTimezone: true }),
+    repliedAt: timestamp('replied_at', { withTimezone: true }),
+    /** donor = replied to our email (fee applies), file = fixed by a newer export, hand = fixed by the charity. */
+    fixedBy: text('fixed_by'),
+    /** Corrected details, once fixed. */
+    fixedTitle: text('fixed_title'),
+    fixedFirst: text('fixed_first'),
+    fixedLast: text('fixed_last'),
+    fixedHouse: text('fixed_house'),
+    fixedPostcode: text('fixed_postcode'),
+    claimId: uuid('claim_id').references(() => claims.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('review_rows_key_unique').on(t.charityId, t.platform, t.donationId),
+    index('review_rows_charity_status_idx').on(t.charityId, t.status),
+    index('review_rows_request_idx').on(t.requestId),
+  ]
+)
+
+/** One email to one donor: a secret link. Only a hash of the code is stored. */
+export const recoveryRequests = pgTable(
+  'recovery_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id').notNull().references(() => charities.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull(),
+    /** A reminder gets its own fresh code (only hashes are stored), tied to the first request's rows. */
+    parentId: uuid('parent_id'),
+    email: text('email').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('recovery_requests_code_unique').on(t.codeHash)]
+)
+
+/** Every email sent and every form submitted (audit trail). */
+export const recoveryLog = pgTable(
+  'recovery_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id').notNull().references(() => charities.id, { onDelete: 'cascade' }),
+    requestId: uuid('request_id'),
+    /** email_sent, reminder_sent, form_submitted, fixed_from_file, fixed_by_hand, no_response, link_expired */
+    type: text('type').notNull(),
+    toEmail: text('to_email'),
+    detail: text('detail').notNull().default(''),
+    delivered: boolean('delivered'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('recovery_log_charity_idx').on(t.charityId, t.at)]
+)
+
+// ---------------------------------------------------------------------------------------------------
+// BoostAid admin: invoices (one per claim with recovered Gift Aid) and notifications
+// ---------------------------------------------------------------------------------------------------
+
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id').notNull().references(() => charities.id, { onDelete: 'restrict' }),
+    claimId: uuid('claim_id').notNull().references(() => claims.id, { onDelete: 'restrict' }),
+    /** BA-<claim ref>, e.g. BA-GA-2026-0026 */
+    number: text('number').notNull(),
+    /** Recovered Gift Aid HMRC actually paid, and the 5% fee on it. */
+    recoveredPaid: numeric('recovered_paid', { precision: 12, scale: 2 }).notNull(),
+    fee: numeric('fee', { precision: 12, scale: 2 }).notNull(),
+    status: text('status').notNull().default('sent'), // sent | paid
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    sentTo: text('sent_to').notNull().default(''),
+    delivered: boolean('delivered').notNull().default(false),
+  },
+  (t) => [uniqueIndex('invoices_claim_unique').on(t.claimId), uniqueIndex('invoices_number_unique').on(t.number)]
+)
+
+export const adminNotifications = pgTable(
+  'admin_notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** submitted | received | invoice_sent | invoice_paid */
+    type: text('type').notNull(),
+    charityId: uuid('charity_id').references(() => charities.id, { onDelete: 'cascade' }),
+    claimId: uuid('claim_id').references(() => claims.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('admin_notifications_created_idx').on(t.createdAt)]
 )

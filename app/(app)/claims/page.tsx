@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Card, PageHeader, Tabs, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Pagination } from '@/components/ui/pagination'
 import SummaryStrip from '@/components/claims/summary-strip'
+import FeeReport from '@/components/claims/fee-report'
+import RecoveredBanner from '@/components/recovery/recovered-banner'
 import SubmitDialog from '@/components/claims/submit-dialog'
 import ReceivedDialog from '@/components/claims/received-dialog'
 import NoCharityNotice from '@/components/charity/no-charity-notice'
 import { useCharity } from '@/lib/store/charity'
 import type { ClaimDto } from '@/lib/claims'
+import { giftAidOn } from '@/lib/claims'
 import {
   NEXT_STATUS,
   PREV_STATUS,
@@ -117,6 +120,7 @@ export default function ClaimsPage() {
       ) : (
       <>
       <SummaryStrip refreshKey={tick} linked={false} />
+      {selectedId !== 'all' && <RecoveredBanner charityId={selectedId} refreshKey={tick} />}
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-[260px] flex-1">
@@ -255,8 +259,10 @@ export default function ClaimsPage() {
         />
       </Card>
 
+      {selectedId !== 'all' && <FeeReport charityId={selectedId} refreshKey={tick} />}
+
       <ReceivedDialog
-        claim={receivedFor}
+        claim={receivedFor ? { id: receivedFor.id, ref: receivedFor.ref, giftAidAmount: receivedFor.giftAidAmount, recoveredGiftAid: giftAidOn(receivedFor.recoveredAmount) } : null}
         onClose={() => setReceivedFor(null)}
         onDone={() => {
           load(view, page, pageSize, selectedId)

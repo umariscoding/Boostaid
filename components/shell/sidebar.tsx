@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Gift, PieChart, Plus, Receipt, Search, Settings, Sparkles, type LucideIcon } from 'lucide-react'
+import { Gift, PieChart, Plus, Receipt, Search, Settings, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useCharity } from '@/lib/store/charity'
 import { useAccountStore } from '@/lib/store/account'
@@ -58,6 +58,9 @@ function CharityPicker() {
 export default function Sidebar() {
   const pathname = usePathname()
   const email = useAccountStore((s) => s.email)
+  const role = useAccountStore((s) => s.role)
+  // The Admin page is BoostAid's own: only the admin login sees the link (the server checks the role too)
+  const nav = role === 'admin' ? [...NAV, { href: '/admin', label: 'BoostAid admin', icon: ShieldCheck }] : NAV
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
@@ -75,7 +78,7 @@ export default function Sidebar() {
       <CharityPicker />
 
       <nav className="px-3 pb-3 md:pt-3 flex md:flex-col gap-1 overflow-x-auto">
-        {NAV.map(({ href, label, icon: Icon }) => (
+        {nav.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}

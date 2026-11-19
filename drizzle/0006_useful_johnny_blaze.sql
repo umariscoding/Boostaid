@@ -1,0 +1,1 @@
+ALTER TABLE "recovery_requests" ADD COLUMN "parent_id" uuid;

@@ -7,6 +7,8 @@ import { apiJson } from '@/components/claims/shared'
 export interface CharityInfo {
   id: string
   name: string
+  /** Replies to donor emails go here, and BoostAid's invoices are sent here. */
+  contactEmail: string
   createdAt: string
   claimCount: number
   donationCount: number

@@ -8,12 +8,13 @@ export const GET = withAuth(async () => {
   const rows = await getDb().execute<{
     id: string
     name: string
+    contact_email: string | null
     created_at: Date
     claims: number
     donations: number
     donated: string
   }>(sql`
-    select c.id, c.name, c.created_at,
+    select c.id, c.name, c.contact_email, c.created_at,
       (select count(*)::int from claims cl join batches b on b.id = cl.batch_id where b.charity_id = c.id) as claims,
       (select count(*)::int from donations d join claims cl on cl.id = d.claim_id join batches b on b.id = cl.batch_id
         where b.charity_id = c.id) as donations,
@@ -27,6 +28,7 @@ export const GET = withAuth(async () => {
     charities: rows.rows.map((r) => ({
       id: r.id,
       name: r.name,
+      contactEmail: r.contact_email ?? '',
       createdAt: new Date(r.created_at).toISOString(),
       claimCount: r.claims,
       donationCount: r.donations,
@@ -50,7 +52,7 @@ export const POST = withAuth(async (req) => {
 
   const [created] = await db.insert(charities).values({ name }).returning()
   return NextResponse.json(
-    { charity: { id: created.id, name: created.name, createdAt: created.createdAt.toISOString(), claimCount: 0, donationCount: 0, donated: 0 } },
+    { charity: { id: created.id, name: created.name, contactEmail: '', createdAt: created.createdAt.toISOString(), claimCount: 0, donationCount: 0, donated: 0 } },
     { status: 201 }
   )
 })

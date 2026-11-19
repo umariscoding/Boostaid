@@ -45,3 +45,15 @@ export const DELETE = withAuth<{ id: string }>(async (_req, { params }) => {
   }
   return NextResponse.json({ success: true, deleted: result })
 })
+
+/** Set the charity's contact email: where donors' replies go, and where BoostAid's invoices are sent. */
+export const PATCH = withAuth<{ id: string }>(async (req, { params }) => {
+  const { id } = await params
+  if (!UUID_RE.test(id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const body = await req.json().catch(() => null)
+  const email = String(body?.contactEmail ?? '').trim().toLowerCase()
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new RangeError('Enter a valid email address')
+  const [updated] = await getDb().update(charities).set({ contactEmail: email || null }).where(eq(charities.id, id)).returning({ id: charities.id })
+  if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return NextResponse.json({ success: true, contactEmail: email })
+})
