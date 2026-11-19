@@ -1,0 +1,275 @@
+Receipt no,Book,Date,Amount,Paid by,Projects,Zakat,Sadaqah,Notes,Status,Void reason,Donor ID,Donor,Address,Postcode,Email,Phone,Consent,Gift Aid,Claimed,Banked,Issued by
+A-000027,A,2026-04-09,50.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Bilal Rahman,95,LE4 6AB,bilal.rahman@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000089,A,2026-04-09,10.00,Card,General,0.00,0.00,Event donation,valid,,,Mrs Khadija Shah,46,LE3 1FG,khadija.shah@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000195,A,2026-04-09,30.00,Cash,General,0.00,0.00,Event donation,valid,,,Mr Ali Patel,73,B11 2QT,ali.patel@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000218,A,2026-04-09,5.00,Cash,Water wells,0.00,0.00,Event donation,valid,,,Ms Sara Chaudhry,125,B11 2QT,,,,No,No,Yes,Amina Khan
+C-000039,C,2026-04-09,93.18,Card,Emergency appeal,0.00,0.00,"Street collection, High Street",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+C-000001,C,2026-04-10,331.25,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Amina Khan
+A-000114,A,2026-04-12,250.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Ms Zainab Iqbal,100,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000012,A,2026-04-13,25.00,Card,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Miss Maryam Siddiqui,139,E1 6AN,,,,No,No,Yes,Bilal Ahmed
+A-000050,A,2026-04-14,10.00,Cash,General (Zakat),10.00,0.00,Office walk-in,valid,,,Mr Zain Karim,87,LE3 1FG,zain.karim@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000191,A,2026-04-14,15.00,Cash,General (Sadaqah),0.00,15.00,Office walk-in,valid,,,Mrs Sara Ahmed,100,LE2 1TS,,,,No,No,Yes,Amina Khan
+A-000073,A,2026-04-15,75.00,Cheque,General (Zakat),75.00,0.00,By post,valid,,,Mr Ali Hussain,14,LE3 1FG,,,,No,No,Yes,Yusuf Ali
+A-000179,A,2026-04-15,5.00,Cash,General (Zakat),5.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000197,A,2026-04-15,25.00,Cash,General (Sadaqah),0.00,25.00,Office walk-in,valid,,,Mr Ibrahim Mirza,31,LE5 3QF,,,,No,No,Yes,Maryam Siddiqui
+A-000107,A,2026-04-16,20.00,Cheque,Water wells,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000192,A,2026-04-16,15.00,Cash,General (Zakat),15.00,0.00,Office walk-in,valid,,,Mr Omar Karim,94,LE5 3QF,,,,No,No,Yes,Bilal Ahmed
+A-000043,A,2026-04-17,50.00,Card,General (Sadaqah),0.00,50.00,Office walk-in,valid,,,Mr Musa Rahman,120,E1 6AN,musa.rahman@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000101,A,2026-04-17,30.00,Cheque,General (Sadaqah),0.00,30.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000110,A,2026-04-17,25.00,Cash,General (Zakat),25.00,0.00,Office walk-in,valid,,,Miss Aisha Siddiqui,115,LE3 1FG,aisha.siddiqui@example.com,,,Yes,No,Yes,Amina Khan
+A-000135,A,2026-04-17,20.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Miss Huda Mirza,104,LE4 6AB,,,,No,No,Yes,Amina Khan
+A-000172,A,2026-04-17,5.00,Cash,General (Sadaqah),0.00,5.00,Office walk-in,valid,,,Ms Noor Mirza,23,E1 6AN,noor.mirza@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000207,A,2026-04-17,20.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mrs Sara Rahman,86,LE5 3QF,sara.rahman@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000215,A,2026-04-17,15.00,Cash,General,0.00,0.00,Event donation,valid,,,Ms Fatima Shah,4,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+C-000002,C,2026-04-17,1302.75,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Bilal Ahmed
+A-000213,A,2026-04-18,100.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Ms Fatima Uddin,136,LE4 6AB,,,,No,No,Yes,Amina Khan
+A-000009,A,2026-04-20,20.00,Cash,General (Sadaqah),0.00,20.00,Office walk-in,valid,,,Mr Bilal Hussain,81,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000015,A,2026-04-20,75.00,Card,General (Sadaqah),0.00,75.00,Office walk-in,valid,,,Mr Ibrahim Patel,71,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+A-000181,A,2026-04-23,250.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mrs Zainab Rahman,24,LE5 3QF,,,,No,No,Yes,Yusuf Ali
+A-000147,A,2026-04-24,10.00,Cash,Water wells,0.00,0.00,Office walk-in,void,Donor changed mind,,Anonymous donor,,,,,,No,No,No,Maryam Siddiqui
+C-000003,C,2026-04-24,1175.00,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000124,A,2026-04-25,100.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Ms Khadija Malik,12,LE4 6AB,,,,No,No,Yes,Maryam Siddiqui
+A-000177,A,2026-04-25,10.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000219,A,2026-04-25,30.00,Card,General (Zakat),30.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000001,A,2026-04-27,50.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Miss Maryam Patel,51,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000108,A,2026-04-27,50.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Maryam Shah,131,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000085,A,2026-04-28,30.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Ms Huda Ali,85,B11 2QT,huda.ali@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000080,A,2026-04-29,20.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000150,A,2026-04-29,30.00,Cash,General (Sadaqah),0.00,30.00,Event donation,valid,,,Mr Adam Hussain,85,LE3 1FG,,,,No,No,Yes,Yusuf Ali
+A-000062,A,2026-05-01,25.00,Cash,General,0.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+C-000004,C,2026-05-01,1133.75,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Bilal Ahmed
+A-000029,A,2026-05-03,30.00,Card,General (Zakat),30.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000066,A,2026-05-03,50.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mrs Aisha Patel,94,LE4 6AB,,,,No,No,Yes,Amina Khan
+A-000217,A,2026-05-03,5.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Ms Noor Rahman,22,LE4 6AB,noor.rahman@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000007,A,2026-05-04,10.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Khadija Ali,16,LE2 1TS,khadija.ali@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000039,A,2026-05-05,75.00,Cash,General,0.00,0.00,Event donation,valid,,,Mr Bilal Mirza,94,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000071,A,2026-05-05,150.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Ms Sara Karim,46,LE4 6AB,sara.karim@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000165,A,2026-05-06,5.00,Cash,General (Sadaqah),0.00,5.00,Event donation,valid,,,Mr Bilal Rahman,96,LE5 3QF,bilal.rahman@example.com,,,Yes,No,Yes,Amina Khan
+A-000186,A,2026-05-07,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mrs Fatima Iqbal,86,LE3 1FG,fatima.iqbal@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000187,A,2026-05-07,150.00,Cash,General (Sadaqah),0.00,150.00,Office walk-in,valid,,,Mrs Aisha Chaudhry,125,E1 6AN,aisha.chaudhry@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000201,A,2026-05-07,10.00,Cash,General (Sadaqah),0.00,10.00,Office walk-in,valid,,,Miss Noor Rahman,26,LE5 3QF,,,,No,No,Yes,Amina Khan
+A-000021,A,2026-05-08,25.00,Cash,General (Zakat),25.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000035,A,2026-05-08,25.00,Card,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mrs Maryam Khan,132,LE2 1TS,,,,No,No,Yes,Amina Khan
+A-000203,A,2026-05-08,10.00,Cash,General (Zakat),10.00,0.00,Event donation,void,Donor changed mind,,Mr Bilal Khan,38,LE3 1FG,,,,No,No,No,Amina Khan
+C-000005,C,2026-05-08,484.75,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Amina Khan
+A-000175,A,2026-05-10,250.00,Cash,General (Sadaqah),0.00,250.00,Office walk-in,valid,,,Mr Hamza Hussain,12,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+A-000143,A,2026-05-11,20.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mrs Amina Shah,54,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000168,A,2026-05-11,30.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Imran Karim,110,B11 2QT,,,,No,No,Yes,Amina Khan
+A-000214,A,2026-05-11,5.00,Cash,General (Zakat),5.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000055,A,2026-05-13,75.00,Card,General,0.00,0.00,Office walk-in,valid,,,Ms Aisha Uddin,84,LE3 1FG,aisha.uddin@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000003,A,2026-05-15,10.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Zain Chaudhry,140,LE4 6AB,zain.chaudhry@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000100,A,2026-05-15,30.00,Card,Water wells,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+C-000006,C,2026-05-15,320.75,Cash,General,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Bilal Ahmed
+C-000042,C,2026-05-15,61.85,Card,Emergency appeal,0.00,0.00,"Charity stall, Leicester market",valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000206,A,2026-05-16,25.00,Cheque,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Ali Patel,81,E1 6AN,ali.patel@example.com,,,Yes,No,Yes,Amina Khan
+A-000117,A,2026-05-18,25.00,Bank transfer,General (Sadaqah),0.00,25.00,Event donation,valid,,,Mr Ali Hussain,128,B11 2QT,ali.hussain@example.com,,,Yes,No,Yes,Amina Khan
+A-000077,A,2026-05-19,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Bilal Shah,122,LE4 6AB,bilal.shah@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000141,A,2026-05-19,20.00,Cash,General (Zakat),20.00,0.00,Office walk-in,valid,,,Mr Musa Khan,120,B11 2QT,,,,No,No,Yes,Maryam Siddiqui
+A-000159,A,2026-05-19,20.00,Cash,General,0.00,0.00,Event donation,valid,,,Mrs Huda Patel,40,LE3 1FG,,,,No,No,Yes,Maryam Siddiqui
+A-000052,A,2026-05-20,25.00,Card,General (Zakat),25.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000020,A,2026-05-21,20.00,Cash,General (Sadaqah),0.00,20.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000149,A,2026-05-21,20.00,Card,General (Zakat),20.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000220,A,2026-05-21,10.00,Card,General,0.00,0.00,Event donation,valid,,,Ms Fatima Mirza,7,LE5 3QF,,,,No,No,Yes,Bilal Ahmed
+C-000007,C,2026-05-22,194.50,Cash,Water wells,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+C-000036,C,2026-05-22,408.22,Card,Orphan sponsorship,0.00,0.00,"Charity stall, Leicester market",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000093,A,2026-05-23,20.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Bilal Iqbal,100,LE5 3QF,bilal.iqbal@example.com,,,Yes,No,Yes,Amina Khan
+A-000137,A,2026-05-23,5.00,Card,General,0.00,0.00,Office walk-in,valid,,,Miss Huda Patel,114,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000144,A,2026-05-24,30.00,Cash,General (Sadaqah),0.00,30.00,Office walk-in,valid,,,Ms Amina Malik,70,LE2 1TS,amina.malik@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000075,A,2026-05-25,20.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Miss Amina Patel,93,LE3 1FG,amina.patel@example.com,,,Yes,No,Yes,Amina Khan
+A-000134,A,2026-05-25,20.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Khadija Ahmed,60,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+C-000038,C,2026-05-25,329.12,Card,General (Sadaqah),0.00,329.12,"Street collection, High Street",valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000096,A,2026-05-26,25.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mrs Maryam Akhtar,28,LE2 1TS,,,,No,No,Yes,Amina Khan
+C-000033,C,2026-05-27,3246.27,Cash,General,0.00,0.00,"Eid al-Adha collection, Masjid A",valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000151,A,2026-05-28,25.00,Card,General,0.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000033,A,2026-05-29,50.00,Card,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Zainab Patel,84,LE2 1TS,,,,No,No,Yes,Bilal Ahmed
+A-000079,A,2026-05-29,10.00,Bank transfer,General (Zakat),10.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000176,A,2026-05-29,15.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Ali Patel,26,E1 6AN,,,,No,No,Yes,Yusuf Ali
+C-000008,C,2026-05-29,1042.75,Cash,General (Sadaqah),0.00,1042.75,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Bilal Ahmed
+A-000155,A,2026-05-30,75.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Bilal Uddin,30,E1 6AN,bilal.uddin@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000152,A,2026-06-01,50.00,Cheque,General (Sadaqah),0.00,50.00,Office walk-in,valid,,,Mr Ibrahim Shah,30,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000161,A,2026-06-02,75.00,Cash,General (Zakat),75.00,0.00,Office walk-in,valid,,,Mr Ali Chaudhry,99,LE2 1TS,,,,No,No,Yes,Bilal Ahmed
+A-000025,A,2026-06-04,25.00,Cash,Water wells,0.00,0.00,Event donation,valid,,,Mrs Zainab Rahman,87,LE4 6AB,,,,No,No,Yes,Bilal Ahmed
+A-000064,A,2026-06-05,100.00,Card,General,0.00,0.00,Office walk-in,valid,,,Mr Ali Uddin,119,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000106,A,2026-06-05,25.00,Bank transfer,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mrs Layla Chaudhry,56,LE4 6AB,layla.chaudhry@example.com,,,Yes,No,Yes,Amina Khan
+C-000009,C,2026-06-05,499.50,Cash,General (Zakat),499.50,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Bilal Ahmed
+A-000044,A,2026-06-06,15.00,Card,General (Sadaqah),0.00,15.00,Office walk-in,valid,,,Ms Aisha Akhtar,5,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000223,A,2026-06-06,20.00,Cheque,Water wells,0.00,0.00,By post,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000013,A,2026-06-10,20.00,Bank transfer,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000030,A,2026-06-10,30.00,Card,Water wells,0.00,0.00,Office walk-in,valid,,,Ms Sara Khan,71,B11 2QT,sara.khan@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000049,A,2026-06-11,15.00,Cash,General,0.00,0.00,Event donation,valid,,,Mr Ibrahim Begum,101,LE3 1FG,ibrahim.begum@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000140,A,2026-06-11,15.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Miss Amina Ahmed,19,B11 2QT,amina.ahmed@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000047,A,2026-06-12,10.00,Cheque,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Ibrahim Shah,10,LE2 1TS,ibrahim.shah@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000188,A,2026-06-12,10.00,Cheque,General,0.00,0.00,Office walk-in,valid,,,Mr Yusuf Chaudhry,48,E1 6AN,,,,No,No,Yes,Amina Khan
+C-000010,C,2026-06-12,1449.50,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Amina Khan
+A-000074,A,2026-06-13,25.00,Card,General (Sadaqah),0.00,25.00,Office walk-in,valid,,,Mr Musa Karim,74,LE4 6AB,,,,No,No,Yes,Bilal Ahmed
+A-000211,A,2026-06-13,10.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Imran Iqbal,98,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+A-000225,A,2026-06-13,50.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Musa Khan,67,LE5 3QF,musa.khan@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000229,A,2026-06-13,15.00,Cash,Water wells,0.00,0.00,Event donation,valid,,,Mrs Khadija Ali,136,LE3 1FG,khadija.ali@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000224,A,2026-06-14,150.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Hamza Uddin,127,LE4 6AB,hamza.uddin@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000056,A,2026-06-15,30.00,Cash,General (Sadaqah),0.00,30.00,Office walk-in,valid,,,Ms Sara Shah,8,LE5 3QF,sara.shah@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000221,A,2026-06-16,5.00,Card,Emergency appeal,0.00,0.00,Event donation,valid,,,Mr Musa Akhtar,104,LE2 1TS,musa.akhtar@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000129,A,2026-06-17,15.00,Card,General,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000164,A,2026-06-17,15.00,Cash,General,0.00,0.00,Office walk-in,void,Duplicate receipt,,Ms Noor Ali,66,LE3 1FG,,,,No,No,No,Amina Khan
+A-000170,A,2026-06-19,5.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Mrs Maryam Malik,8,LE3 1FG,,,,No,No,Yes,Yusuf Ali
+C-000011,C,2026-06-19,1098.25,Cash,General,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Maryam Siddiqui
+A-000011,A,2026-06-21,5.00,Card,General (Zakat),5.00,0.00,Office walk-in,valid,,,Ms Khadija Hussain,33,B11 2QT,khadija.hussain@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000031,A,2026-06-22,150.00,Card,Emergency appeal,0.00,0.00,Event donation,valid,,,Mr Musa Khan,24,B11 2QT,,,,No,No,Yes,Maryam Siddiqui
+A-000005,A,2026-06-23,25.00,Cash,General (Zakat),25.00,0.00,Office walk-in,valid,,,Mr Hamza Begum,135,B11 2QT,hamza.begum@example.com,,,Yes,No,Yes,Amina Khan
+C-000012,C,2026-06-26,545.25,Cash,General (Sadaqah),0.00,545.25,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+C-000034,C,2026-06-26,1058.33,Cash,General,0.00,0.00,"Muharram collection, Masjid B",valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000194,A,2026-06-27,250.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Adam Akhtar,56,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000173,A,2026-07-01,25.00,Cash,General (Sadaqah),0.00,25.00,Office walk-in,valid,,,Mr Omar Akhtar,74,B11 2QT,,,,No,No,Yes,Amina Khan
+C-000013,C,2026-07-03,211.50,Cash,Water wells,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Maryam Siddiqui
+A-000084,A,2026-07-04,20.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Zain Patel,112,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000115,A,2026-07-05,10.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Zain Malik,44,LE5 3QF,,,,No,No,Yes,Bilal Ahmed
+A-000142,A,2026-07-05,10.00,Cheque,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000178,A,2026-07-05,150.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Imran Akhtar,137,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000016,A,2026-07-06,20.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Miss Amina Akhtar,2,LE2 1TS,,,,No,No,Yes,Bilal Ahmed
+A-000230,A,2026-07-06,10.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Ibrahim Malik,109,LE5 3QF,,,,No,No,Yes,Amina Khan
+A-000076,A,2026-07-08,20.00,Cash,General (Zakat),20.00,0.00,Office walk-in,valid,,,Mr Omar Iqbal,119,B11 2QT,omar.iqbal@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000122,A,2026-07-10,20.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000196,A,2026-07-10,40.00,Cash,General (Zakat),40.00,0.00,Office walk-in,valid,,,Mr Musa Iqbal,40,LE3 1FG,,,,No,No,Yes,Maryam Siddiqui
+C-000014,C,2026-07-10,641.75,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Amina Khan
+A-000059,A,2026-07-11,100.00,Cash,General (Zakat),100.00,0.00,Office walk-in,valid,,,Miss Aisha Malik,137,B11 2QT,aisha.malik@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000138,A,2026-07-11,30.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Miss Sara Karim,87,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000169,A,2026-07-11,10.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mrs Fatima Mirza,54,E1 6AN,,,,No,No,Yes,Bilal Ahmed
+A-000018,A,2026-07-12,20.00,Cash,General (Zakat),20.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000042,A,2026-07-13,10.00,Cash,General (Zakat),10.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000002,A,2026-07-14,40.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Adam Siddiqui,32,LE3 1FG,,,,No,No,Yes,Yusuf Ali
+A-000163,A,2026-07-14,10.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Miss Khadija Mirza,118,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+A-000189,A,2026-07-15,50.00,Card,General,0.00,0.00,Office walk-in,valid,,,Ms Huda Siddiqui,49,LE2 1TS,,,,No,No,Yes,Yusuf Ali
+A-000132,A,2026-07-17,25.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Bilal Siddiqui,139,E1 6AN,bilal.siddiqui@example.com,,,Yes,No,Yes,Maryam Siddiqui
+C-000015,C,2026-07-17,686.50,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000083,A,2026-07-18,15.00,Card,General,0.00,0.00,Office walk-in,valid,,,Mr Hamza Rahman,3,LE4 6AB,hamza.rahman@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000090,A,2026-07-18,5.00,Card,General,0.00,0.00,Office walk-in,void,Duplicate receipt,,Anonymous donor,,,,,,No,No,No,Amina Khan
+A-000116,A,2026-07-19,25.00,Card,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000068,A,2026-07-20,20.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,void,"Wrong amount written, reissued",,Anonymous donor,,,,,,No,No,No,Maryam Siddiqui
+A-000171,A,2026-07-20,75.00,Bank transfer,General,0.00,0.00,Event donation,void,"Wrong amount written, reissued",,Ms Aisha Malik,90,LE5 3QF,,,,No,No,No,Bilal Ahmed
+A-000166,A,2026-07-21,50.00,Bank transfer,General (Zakat),50.00,0.00,Office walk-in,valid,,,Mrs Amina Malik,108,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000088,A,2026-07-22,15.00,Bank transfer,General (Zakat),15.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000010,A,2026-07-24,50.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Hamza Shah,85,LE2 1TS,,,,No,No,Yes,Amina Khan
+C-000016,C,2026-07-24,1281.50,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Bilal Ahmed
+A-000094,A,2026-07-25,10.00,Cheque,General,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000119,A,2026-07-25,15.00,Cheque,Water wells,0.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000131,A,2026-07-26,25.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Hamza Begum,67,LE4 6AB,,,,No,No,Yes,Maryam Siddiqui
+A-000120,A,2026-07-27,5.00,Card,General (Sadaqah),0.00,5.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000209,A,2026-07-31,40.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Ms Maryam Ahmed,72,LE5 3QF,maryam.ahmed@example.com,,,Yes,No,Yes,Maryam Siddiqui
+C-000017,C,2026-07-31,685.75,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Maryam Siddiqui
+A-000038,A,2026-08-01,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Noor Malik,21,LE2 1TS,,,,No,No,Yes,Yusuf Ali
+A-000126,A,2026-08-02,100.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Musa Chaudhry,30,B11 2QT,,,,No,No,Yes,Maryam Siddiqui
+A-000036,A,2026-08-03,5.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Mrs Huda Patel,8,LE5 3QF,,,,No,No,Yes,Yusuf Ali
+A-000051,A,2026-08-03,15.00,Card,General (Sadaqah),0.00,15.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000123,A,2026-08-04,25.00,Cheque,General,0.00,0.00,By post,valid,,,Mr Ali Karim,67,LE2 1TS,ali.karim@example.com,,,Yes,No,Yes,Amina Khan
+A-000185,A,2026-08-05,20.00,Cash,General (Zakat),20.00,0.00,Office walk-in,valid,,,Mr Zain Ali,48,LE2 1TS,,,,No,No,Yes,Yusuf Ali
+C-000044,C,2026-08-05,271.66,Card,Water wells,0.00,0.00,"Charity stall, Leicester market",valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000145,A,2026-08-06,5.00,Cash,General (Zakat),5.00,0.00,Office walk-in,valid,,,Mr Bilal Begum,134,LE5 3QF,,,,No,No,Yes,Yusuf Ali
+A-000004,A,2026-08-07,10.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Imran Ali,137,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+C-000018,C,2026-08-07,1252.50,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Bilal Ahmed
+A-000032,A,2026-08-09,250.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Miss Huda Siddiqui,55,LE4 6AB,,,,No,No,Yes,Yusuf Ali
+A-000216,A,2026-08-09,25.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000022,A,2026-08-11,30.00,Cheque,General (Zakat),30.00,0.00,Office walk-in,valid,,,Mr Ibrahim Iqbal,23,LE3 1FG,ibrahim.iqbal@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000065,A,2026-08-11,5.00,Cash,General (Sadaqah),0.00,5.00,Office walk-in,valid,,,Mr Ali Akhtar,140,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000180,A,2026-08-11,30.00,Card,General (Sadaqah),0.00,30.00,Office walk-in,valid,,,Mrs Maryam Iqbal,69,LE2 1TS,,,,No,No,Yes,Yusuf Ali
+A-000199,A,2026-08-11,5.00,Cash,General (Zakat),5.00,0.00,Office walk-in,valid,,,Mrs Huda Akhtar,55,LE2 1TS,huda.akhtar@example.com,,,Yes,No,Yes,Maryam Siddiqui
+C-000019,C,2026-08-14,831.50,Cash,General,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000040,A,2026-08-17,10.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Ms Huda Akhtar,13,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+A-000092,A,2026-08-18,75.00,Cheque,General,0.00,0.00,Event donation,valid,,,Ms Zainab Rahman,92,LE4 6AB,,,,No,No,Yes,Amina Khan
+A-000130,A,2026-08-18,5.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Ms Maryam Shah,95,LE2 1TS,maryam.shah@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000202,A,2026-08-19,15.00,Cash,General (Zakat),15.00,0.00,Office walk-in,valid,,,Ms Khadija Khan,106,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000034,A,2026-08-20,5.00,Card,General (Zakat),5.00,0.00,Event donation,valid,,,Mr Imran Patel,46,LE5 3QF,,,,No,No,Yes,Maryam Siddiqui
+A-000227,A,2026-08-20,10.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Musa Chaudhry,30,LE5 3QF,,,,No,No,Yes,Bilal Ahmed
+A-000028,A,2026-08-21,30.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Mr Yusuf Patel,107,E1 6AN,,,,No,No,Yes,Yusuf Ali
+C-000020,C,2026-08-21,1152.50,Cash,General,0.00,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Amina Khan
+A-000019,A,2026-08-22,5.00,Cheque,Water wells,0.00,0.00,By post,valid,,,Ms Maryam Karim,138,LE5 3QF,,,,No,No,Yes,Amina Khan
+A-000081,A,2026-08-22,30.00,Cheque,General (Sadaqah),0.00,30.00,By post,valid,,,Mr Adam Siddiqui,88,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+A-000104,A,2026-08-23,20.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Miss Khadija Karim,83,LE4 6AB,,,,No,No,Yes,Yusuf Ali
+A-000082,A,2026-08-26,250.00,Cash,General (Sadaqah),0.00,250.00,Office walk-in,valid,,,Ms Zainab Ahmed,11,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000160,A,2026-08-27,15.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Ibrahim Siddiqui,115,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000046,A,2026-08-28,10.00,Card,General (Sadaqah),0.00,10.00,Office walk-in,valid,,,Mrs Khadija Ahmed,2,LE5 3QF,,,,No,No,Yes,Amina Khan
+C-000021,C,2026-08-28,1091.00,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Bilal Ahmed
+A-000070,A,2026-08-29,20.00,Card,General (Zakat),20.00,0.00,Office walk-in,valid,,,Ms Aisha Siddiqui,6,E1 6AN,aisha.siddiqui@example.com,,,Yes,No,Yes,Amina Khan
+A-000157,A,2026-08-29,15.00,Cash,General (Sadaqah),0.00,15.00,Event donation,valid,,,Mr Ibrahim Karim,127,LE2 1TS,ibrahim.karim@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000067,A,2026-08-31,100.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Ms Layla Malik,65,B11 2QT,,,,No,No,Yes,Maryam Siddiqui
+A-000200,A,2026-08-31,50.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Hamza Patel,70,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+A-000208,A,2026-09-02,15.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Imran Patel,114,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000091,A,2026-09-04,50.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Ali Khan,9,LE5 3QF,,,,No,No,Yes,Maryam Siddiqui
+C-000022,C,2026-09-04,360.75,Cash,General (Sadaqah),0.00,360.75,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Amina Khan
+A-000162,A,2026-09-05,10.00,Cash,General (Sadaqah),0.00,10.00,Office walk-in,valid,,,Miss Noor Akhtar,49,LE2 1TS,,,,No,No,Yes,Yusuf Ali
+A-000198,A,2026-09-07,20.00,Card,General,0.00,0.00,Event donation,valid,,,Miss Huda Mirza,63,LE5 3QF,,,,No,No,Yes,Amina Khan
+C-000040,C,2026-09-09,345.76,Card,General,0.00,0.00,"Street collection, Belgrave Road",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000226,A,2026-09-10,25.00,Cash,General (Zakat),25.00,0.00,Office walk-in,valid,,,Miss Zainab Mirza,81,LE2 1TS,,,,No,No,Yes,Amina Khan
+C-000023,C,2026-09-11,975.75,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000078,A,2026-09-12,20.00,Cash,Water wells,0.00,0.00,Event donation,valid,,,Miss Aisha Siddiqui,117,LE3 1FG,,,,No,No,Yes,Amina Khan
+A-000182,A,2026-09-13,5.00,Card,General,0.00,0.00,Office walk-in,valid,,,Mr Zain Karim,34,LE2 1TS,,,,No,No,Yes,Bilal Ahmed
+A-000111,A,2026-09-15,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Musa Akhtar,59,LE3 1FG,musa.akhtar@example.com,,,Yes,No,Yes,Amina Khan
+A-000148,A,2026-09-15,25.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Mr Zain Siddiqui,92,E1 6AN,,,,No,No,Yes,Amina Khan
+A-000158,A,2026-09-15,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000103,A,2026-09-17,15.00,Cash,General (Sadaqah),0.00,15.00,Office walk-in,valid,,,Mr Yusuf Karim,6,LE5 3QF,yusuf.karim@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000008,A,2026-09-18,50.00,Cheque,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Ibrahim Chaudhry,106,LE2 1TS,ibrahim.chaudhry@example.com,,,Yes,No,Yes,Amina Khan
+C-000024,C,2026-09-18,1087.50,Cash,Emergency appeal,0.00,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+C-000037,C,2026-09-19,155.93,Card,General (Zakat),155.93,0.00,"Street collection, High Street",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000133,A,2026-09-21,40.00,Cheque,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Bilal Ahmed,118,LE3 1FG,bilal.ahmed@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000112,A,2026-09-22,30.00,Cash,General (Sadaqah),0.00,30.00,Event donation,valid,,,Ms Aisha Malik,57,LE5 3QF,,,,No,No,Yes,Bilal Ahmed
+A-000174,A,2026-09-22,30.00,Cash,General (Zakat),30.00,0.00,Office walk-in,valid,,,Miss Aisha Uddin,68,E1 6AN,,,,No,No,Yes,Yusuf Ali
+A-000097,A,2026-09-23,40.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Ms Huda Chaudhry,25,LE3 1FG,,,,No,No,Yes,Bilal Ahmed
+A-000184,A,2026-09-23,10.00,Cash,General (Sadaqah),0.00,10.00,Event donation,valid,,,Mr Yusuf Shah,130,B11 2QT,yusuf.shah@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000183,A,2026-09-25,10.00,Cash,General,0.00,0.00,Event donation,valid,,,Mr Yusuf Shah,65,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000222,A,2026-09-25,100.00,Cash,Emergency appeal,0.00,0.00,Event donation,valid,,,Mrs Khadija Siddiqui,30,LE5 3QF,khadija.siddiqui@example.com,,,Yes,No,Yes,Bilal Ahmed
+C-000025,C,2026-09-25,891.00,Cash,Water wells,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Maryam Siddiqui
+A-000026,A,2026-09-26,25.00,Card,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Zain Siddiqui,107,LE3 1FG,zain.siddiqui@example.com,,,Yes,No,Yes,Maryam Siddiqui
+C-000035,C,2026-09-29,317.95,Card,General (Zakat),317.95,0.00,"Charity stall, Leicester market",valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+C-000043,C,2026-09-29,319.37,Card,Emergency appeal,0.00,0.00,"Street collection, Belgrave Road",valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000058,A,2026-09-30,20.00,Cash,General (Sadaqah),0.00,20.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000069,A,2026-10-01,30.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Miss Fatima Chaudhry,111,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+A-000118,A,2026-10-02,30.00,Card,General (Sadaqah),0.00,30.00,Office walk-in,valid,,,Miss Maryam Shah,43,E1 6AN,maryam.shah@example.com,,,Yes,No,Yes,Amina Khan
+C-000026,C,2026-10-02,876.25,Cash,Water wells,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Bilal Ahmed
+A-000121,A,2026-10-03,10.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Miss Layla Begum,70,E1 6AN,layla.begum@example.com,,,Yes,No,Yes,Amina Khan
+A-000210,A,2026-10-03,20.00,Cheque,Emergency appeal,0.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,Yes,Bilal Ahmed
+A-000054,A,2026-10-05,50.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Miss Fatima Iqbal,33,LE4 6AB,,,,No,No,Yes,Maryam Siddiqui
+A-000057,A,2026-10-05,10.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mrs Huda Begum,78,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000125,A,2026-10-05,15.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mrs Sara Rahman,8,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000127,A,2026-10-05,30.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000045,A,2026-10-09,20.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Ibrahim Uddin,134,LE5 3QF,,,,No,No,Yes,Amina Khan
+A-000136,A,2026-10-09,50.00,Bank transfer,General (Sadaqah),0.00,50.00,Office walk-in,valid,,,Ms Layla Uddin,20,LE5 3QF,layla.uddin@example.com,,,Yes,No,Yes,Amina Khan
+A-000212,A,2026-10-09,20.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mrs Amina Ahmed,117,E1 6AN,amina.ahmed@example.com,,,Yes,No,Yes,Amina Khan
+C-000027,C,2026-10-09,1202.25,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000086,A,2026-10-12,20.00,Card,General,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000053,A,2026-10-13,10.00,Cash,General (Zakat),10.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000102,A,2026-10-14,25.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Hamza Begum,36,LE3 1FG,hamza.begum@example.com,,,Yes,No,Yes,Amina Khan
+A-000139,A,2026-10-14,25.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Ms Sara Ali,49,LE4 6AB,,,,No,No,Yes,Yusuf Ali
+A-000190,A,2026-10-14,10.00,Cash,General (Zakat),10.00,0.00,Office walk-in,valid,,,Mrs Khadija Malik,123,B11 2QT,,,,No,No,Yes,Yusuf Ali
+A-000204,A,2026-10-14,25.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mrs Noor Iqbal,49,LE3 1FG,,,,No,No,Yes,Maryam Siddiqui
+A-000023,A,2026-10-15,20.00,Cheque,Orphan sponsorship,0.00,0.00,By post,valid,,,Mr Imran Chaudhry,46,LE5 3QF,,,,No,No,Yes,Yusuf Ali
+C-000041,C,2026-10-15,256.72,Card,Water wells,0.00,0.00,"Street collection, High Street",valid,,,Anonymous donor,,,,,,No,No,Yes,Maryam Siddiqui
+A-000041,A,2026-10-16,10.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Miss Fatima Uddin,18,B11 2QT,fatima.uddin@example.com,,,Yes,No,Yes,Amina Khan
+A-000128,A,2026-10-16,5.00,Cheque,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Adam Begum,17,B11 2QT,,,,No,No,Yes,Amina Khan
+C-000028,C,2026-10-16,437.25,Cash,General (Zakat),437.25,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,Yes,Amina Khan
+A-000063,A,2026-10-18,10.00,Card,General,0.00,0.00,Office walk-in,valid,,,Miss Maryam Uddin,47,LE4 6AB,maryam.uddin@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000156,A,2026-10-21,10.00,Card,General,0.00,0.00,Office walk-in,valid,,,Ms Fatima Patel,121,LE5 3QF,,,,No,No,Yes,Amina Khan
+A-000095,A,2026-10-23,250.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Musa Uddin,131,LE4 6AB,,,,No,No,Yes,Yusuf Ali
+C-000029,C,2026-10-23,222.00,Cash,Water wells,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,LE4 6JT,,,,No,No,Yes,Bilal Ahmed
+A-000098,A,2026-10-24,10.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Hamza Uddin,58,E1 6AN,hamza.uddin@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000113,A,2026-10-24,25.00,Cash,Orphan sponsorship,0.00,0.00,Event donation,valid,,,Mr Zain Akhtar,12,LE5 3QF,zain.akhtar@example.com,,,Yes,No,Yes,Yusuf Ali
+A-000017,A,2026-10-26,20.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Imran Ahmed,79,B11 2QT,,,,No,No,Yes,Bilal Ahmed
+A-000167,A,2026-10-27,25.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Ali Begum,107,LE4 6AB,,,,No,No,Yes,Amina Khan
+A-000099,A,2026-10-29,250.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Ibrahim Begum,35,E1 6AN,,,,No,No,Yes,Maryam Siddiqui
+A-000154,A,2026-10-29,100.00,Cash,General (Sadaqah),0.00,100.00,Office walk-in,valid,,,Miss Noor Begum,24,E1 6AN,noor.begum@example.com,,,Yes,No,Yes,Bilal Ahmed
+A-000153,A,2026-10-30,15.00,Card,Emergency appeal,0.00,0.00,Event donation,valid,,,Ms Huda Iqbal,90,LE4 6AB,huda.iqbal@example.com,,,Yes,No,Yes,Maryam Siddiqui
+C-000030,C,2026-10-30,1200.50,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,BD7 1HD,,,,No,No,Yes,Maryam Siddiqui
+A-000205,A,2026-11-01,20.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Omar Patel,65,B11 2QT,,,,No,No,Yes,Amina Khan
+A-000109,A,2026-11-03,50.00,Cash,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Mr Hamza Patel,137,LE3 1FG,,,,No,No,No,Bilal Ahmed
+A-000060,A,2026-11-04,20.00,Cheque,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Anonymous donor,,,,,,No,No,No,Maryam Siddiqui
+A-000146,A,2026-11-04,15.00,Cheque,General (Zakat),15.00,0.00,Event donation,valid,,,Mr Omar Ali,86,LE3 1FG,omar.ali@example.com,,,Yes,No,No,Maryam Siddiqui
+A-000193,A,2026-11-05,10.00,Bank transfer,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mrs Huda Iqbal,25,LE4 6AB,,,,No,No,No,Bilal Ahmed
+A-000014,A,2026-11-06,100.00,Card,General (Sadaqah),0.00,100.00,Event donation,valid,,,Mr Ibrahim Khan,3,E1 6AN,ibrahim.khan@example.com,,,Yes,No,No,Bilal Ahmed
+C-000031,C,2026-11-06,1350.25,Cash,General (Zakat),1350.25,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,B11 2QT,,,,No,No,No,Bilal Ahmed
+A-000048,A,2026-11-07,20.00,Cash,General,0.00,0.00,Event donation,valid,,,Anonymous donor,,,,,,No,No,No,Bilal Ahmed
+A-000228,A,2026-11-07,20.00,Card,General (Sadaqah),0.00,20.00,Office walk-in,valid,,,Mr Musa Khan,107,B11 2QT,,,,No,No,No,Amina Khan
+A-000006,A,2026-11-09,150.00,Cash,General (Zakat),150.00,0.00,Office walk-in,valid,,,Mr Bilal Hussain,91,LE5 3QF,,,,No,No,No,Yusuf Ali
+A-000087,A,2026-11-10,75.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Miss Fatima Khan,131,LE3 1FG,,,,No,No,No,Maryam Siddiqui
+A-000024,A,2026-11-13,10.00,Cash,General (Sadaqah),0.00,10.00,Office walk-in,valid,,,Ms Layla Karim,114,LE2 1TS,layla.karim@example.com,,,Yes,No,No,Maryam Siddiqui
+A-000061,A,2026-11-13,25.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Yusuf Iqbal,96,LE4 6AB,,,,No,No,No,Amina Khan
+C-000032,C,2026-11-13,772.75,Cash,Orphan sponsorship,0.00,0.00,"Friday collection, Masjid D",valid,,,Anonymous donor,,E1 6AN,,,,No,No,No,Bilal Ahmed
+A-000037,A,2026-11-14,50.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mr Zain Mirza,138,LE3 1FG,,,,No,No,No,Bilal Ahmed
+A-000072,A,2026-11-14,25.00,Cash,Water wells,0.00,0.00,Office walk-in,valid,,,Mrs Khadija Khan,19,B11 2QT,,,,No,No,No,Bilal Ahmed
+A-000105,A,2026-11-14,150.00,Cash,General (Zakat),150.00,0.00,Office walk-in,valid,,,Mrs Aisha Khan,32,LE5 3QF,aisha.khan@example.com,,,Yes,No,No,Yusuf Ali

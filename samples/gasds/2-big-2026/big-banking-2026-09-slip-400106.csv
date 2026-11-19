@@ -1,0 +1,23 @@
+Receipt no,Date,Donor,Projects,Issued by,Receipt amount,Counted in envelope,Difference
+A-000208,2026-09-02,Mr Imran Patel,General,Yusuf Ali,15.00,15.00,0.00
+A-000091,2026-09-04,Mr Ali Khan,General,Maryam Siddiqui,50.00,50.00,0.00
+C-000022,2026-09-04,Anonymous donor,General (Sadaqah),Amina Khan,360.75,360.75,0.00
+A-000162,2026-09-05,Miss Noor Akhtar,General (Sadaqah),Yusuf Ali,10.00,10.00,0.00
+A-000226,2026-09-10,Miss Zainab Mirza,General (Zakat),Amina Khan,25.00,25.00,0.00
+C-000023,2026-09-11,Anonymous donor,Orphan sponsorship,Bilal Ahmed,975.75,975.75,0.00
+A-000078,2026-09-12,Miss Aisha Siddiqui,Water wells,Amina Khan,20.00,20.00,0.00
+A-000111,2026-09-15,Mr Musa Akhtar,Water wells,Amina Khan,30.00,30.00,0.00
+A-000148,2026-09-15,Mr Zain Siddiqui,Emergency appeal,Amina Khan,25.00,25.00,0.00
+A-000158,2026-09-15,Anonymous donor,Water wells,Yusuf Ali,30.00,30.00,0.00
+A-000103,2026-09-17,Mr Yusuf Karim,General (Sadaqah),Yusuf Ali,15.00,15.00,0.00
+C-000024,2026-09-18,Anonymous donor,Emergency appeal,Maryam Siddiqui,1087.50,1067.50,-20.00
+A-000112,2026-09-22,Ms Aisha Malik,General (Sadaqah),Bilal Ahmed,30.00,30.00,0.00
+A-000174,2026-09-22,Miss Aisha Uddin,General (Zakat),Yusuf Ali,30.00,30.00,0.00
+A-000097,2026-09-23,Ms Huda Chaudhry,Orphan sponsorship,Bilal Ahmed,40.00,40.00,0.00
+A-000184,2026-09-23,Mr Yusuf Shah,General (Sadaqah),Yusuf Ali,10.00,10.00,0.00
+A-000183,2026-09-25,Mr Yusuf Shah,General,Yusuf Ali,10.00,10.00,0.00
+A-000222,2026-09-25,Mrs Khadija Siddiqui,Emergency appeal,Bilal Ahmed,100.00,100.00,0.00
+C-000025,2026-09-25,Anonymous donor,Water wells,Maryam Siddiqui,891.00,871.00,-20.00
+A-000058,2026-09-30,Anonymous donor,General (Sadaqah),Bilal Ahmed,20.00,20.00,0.00
+Total,,,,,3775.00,3735.00,-40.00
+Paying-in slip,400106,,,,,3735.00,-40.00

@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "giftaid:verify": "tsx scripts/giftaid-verify.ts",
     "samples:make": "tsx scripts/make-samples.ts samples",
+    "gasds:verify": "tsx scripts/gasds-verify.ts",
     "samples:check": "tsx scripts/check-samples.ts samples",
     "user:create": "tsx scripts/create-user.ts"
   },

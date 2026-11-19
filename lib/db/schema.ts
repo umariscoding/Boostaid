@@ -1,8 +1,11 @@
 import { sql } from 'drizzle-orm'
 import {
+  customType,
   date,
   index,
   integer,
+  jsonb,
+  boolean,
   numeric,
   pgEnum,
   pgSequence,
@@ -141,4 +144,94 @@ export const donations = pgTable(
     index('donations_postcode_idx').on(t.postcodeNorm),
     index('donations_last_name_idx').on(t.lastName),
   ]
+)
+
+// ---------------------------------------------------------------------------------------------------
+// GASDS: the Gift Aid Small Donations Scheme (cash and card donations of £30 or less, no declaration)
+// ---------------------------------------------------------------------------------------------------
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' })
+
+/** A saved GASDS claim for one charity and tax year. Mark it received like a Gift Aid claim. */
+export const gasdsClaims = pgTable(
+  'gasds_claims',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id')
+      .notNull()
+      .references(() => charities.id, { onDelete: 'restrict' }),
+    /** The year the tax year starts: 2026 = 2026/27. */
+    taxYear: integer('tax_year').notNull(),
+    /** Typed into the HMRC GASDS box. HMRC pays 25% of it. */
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    hmrcRef: text('hmrc_ref').notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+    sentBy: text('sent_by').notNull().default(''),
+    /** The Gift Aid figure for that year at the moment the claim was saved (evidence for the 10x rule). */
+    giftAidFigure: numeric('gift_aid_figure', { precision: 12, scale: 2 }).notNull().default('0'),
+    status: claimStatus('status').notNull().default('submitted'),
+    receivedAmount: numeric('received_amount', { precision: 12, scale: 2 }),
+    receivedAt: timestamp('received_at', { withTimezone: true }),
+  },
+  (t) => [index('gasds_claims_charity_idx').on(t.charityId, t.taxYear)]
+)
+
+/** One receipt or collection. Unique per charity by receipt number (or a number made from date/amount/notes). */
+export const gasdsReceipts = pgTable(
+  'gasds_receipts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    charityId: uuid('charity_id')
+      .notNull()
+      .references(() => charities.id, { onDelete: 'restrict' }),
+    receiptNo: text('receipt_no').notNull(),
+    receiptDate: date('receipt_date').notNull(),
+    taxYear: integer('tax_year').notNull(),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    card: boolean('card').notNull().default(false),
+    notCash: boolean('not_cash').notNull().default(false),
+    notes: text('notes').notNull().default(''),
+    donor: text('donor').notNull().default(''),
+    /** One person's gift (true) or a collection (false). */
+    isGift: boolean('is_gift').notNull().default(true),
+    giftAid: boolean('gift_aid').notNull().default(false),
+    banked: boolean('banked').notNull().default(false),
+    slip: text('slip'),
+    /** What the bank counted in the envelope, from the banking export. */
+    counted: numeric('counted', { precision: 12, scale: 2 }),
+    /** Notes and coins counted: { n50, n20, n10, n5, coins }. */
+    count: jsonb('count'),
+    photoName: text('photo_name'),
+    claimId: uuid('claim_id').references(() => gasdsClaims.id, { onDelete: 'restrict' }),
+    /** The amount of this receipt used in that claim. */
+    used: numeric('used', { precision: 12, scale: 2 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('gasds_receipts_charity_no_unique').on(t.charityId, t.receiptNo),
+    index('gasds_receipts_year_idx').on(t.charityId, t.taxYear),
+    index('gasds_receipts_claim_idx').on(t.claimId),
+  ]
+)
+
+/** A photo (or PDF) of a count sheet. Kept in the database for now; move to UK/EU file storage later. */
+export const gasdsPhotos = pgTable('gasds_photos', {
+  receiptId: uuid('receipt_id')
+    .primaryKey()
+    .references(() => gasdsReceipts.id, { onDelete: 'cascade' }),
+  mime: text('mime').notNull(),
+  data: bytea('data').notNull(),
+})
+
+/** Gift Aid the charity claimed outside BoostAid (e.g. through an agent), per tax year. Counts towards the 10x rule. */
+export const gasdsYears = pgTable(
+  'gasds_years',
+  {
+    charityId: uuid('charity_id')
+      .notNull()
+      .references(() => charities.id, { onDelete: 'cascade' }),
+    taxYear: integer('tax_year').notNull(),
+    giftAidElsewhere: numeric('gift_aid_elsewhere', { precision: 12, scale: 2 }).notNull().default('0'),
+  },
+  (t) => [uniqueIndex('gasds_years_unique').on(t.charityId, t.taxYear)]
 )

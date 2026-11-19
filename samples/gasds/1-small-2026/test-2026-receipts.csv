@@ -1,0 +1,13 @@
+Receipt no,Book,Date,Amount,Paid by,Projects,Zakat,Sadaqah,Notes,Status,Void reason,Donor ID,Donor,Address,Postcode,Email,Phone,Consent,Gift Aid,Claimed,Banked,Issued by
+C-000200,C,2026-04-24,2150.00,Cash,General,0.00,0.00,"Friday collection, Masjid A",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+A-000400,A,2026-05-03,20.00,Cash,General (Sadaqah),0.00,20.00,Office walk-in,valid,,,Mr Adam Hussain,15,LE5 3QF,,,,No,No,Yes,Maryam Siddiqui
+C-000201,C,2026-05-29,3400.00,Cash,General (Sadaqah),0.00,3400.00,"Eid collection, Masjid B",valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000401,A,2026-06-14,25.00,Cash,General (Zakat),25.00,0.00,Office walk-in,valid,,,Mrs Noor Iqbal,7,LE4 7DE,noor@example.com,,,Yes,No,Yes,Maryam Siddiqui
+A-000402,A,2026-07-02,100.00,Cash,Emergency appeal,0.00,0.00,Office walk-in,valid,,,Mr Bilal Rahman,22,LE2 1TS,,,,No,No,Yes,Maryam Siddiqui
+C-000202,C,2026-07-10,1980.00,Cash,General,0.00,0.00,"Friday collection, Masjid C",valid,,,Anonymous donor,,,,,,No,No,Yes,Yusuf Ali
+A-000403,A,2026-07-19,30.00,Card,Orphan sponsorship,0.00,0.00,Office walk-in,valid,,,Ms Sara Khan,9,LE5 6AB,,,,No,No,Yes,Maryam Siddiqui
+A-000404,A,2026-08-05,15.00,Cheque,General,0.00,0.00,By post,valid,,,Mr Omar Farooq,,,,,,No,No,Yes,Maryam Siddiqui
+A-000405,A,2026-09-05,12.00,Cash,General,0.00,0.00,Office walk-in,void,"Wrong amount written, reissued",,Mr Omar Farooq,,,,,,No,No,No,Maryam Siddiqui
+A-000406,A,2026-09-06,12.00,Cash,General,0.00,0.00,Office walk-in,valid,,,Mr Omar Farooq,,,,,,No,No,Yes,Maryam Siddiqui
+C-000203,C,2026-09-18,640.00,Card,Emergency appeal,0.00,0.00,"Street collection, Belgrave Road",valid,,,Anonymous donor,,,,,,No,No,Yes,Amina Khan
+C-000204,C,2026-10-30,1120.00,Cash,General,0.00,0.00,"Friday collection, Masjid B",valid,,,Anonymous donor,,,,,,No,No,No,Yusuf Ali

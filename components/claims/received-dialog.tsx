@@ -18,20 +18,23 @@ export default function ReceivedDialog({
   claim,
   onClose,
   onDone,
+  endpoint,
 }: {
   claim: Target | null
   onClose: () => void
   onDone: (updated: ClaimDto) => void
+  /** Where to send the change. Defaults to the Gift Aid claim; small donations (GASDS) claims pass their own. */
+  endpoint?: (id: string) => string
 }) {
   return (
     <Dialog open={!!claim} onClose={onClose}>
       {/* keyed so the box starts from this claim's expected amount each time */}
-      {claim && <ReceivedForm key={claim.id} claim={claim} onClose={onClose} onDone={onDone} />}
+      {claim && <ReceivedForm key={claim.id} claim={claim} onClose={onClose} onDone={onDone} endpoint={endpoint} />}
     </Dialog>
   )
 }
 
-function ReceivedForm({ claim, onClose, onDone }: { claim: Target; onClose: () => void; onDone: (updated: ClaimDto) => void }) {
+function ReceivedForm({ claim, onClose, onDone, endpoint }: { claim: Target; onClose: () => void; onDone: (updated: ClaimDto) => void; endpoint?: (id: string) => string }) {
   const [value, setValue] = useState(claim.giftAidAmount.toFixed(2))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +49,7 @@ function ReceivedForm({ claim, onClose, onDone }: { claim: Target; onClose: () =
     setBusy(true)
     setError(null)
     try {
-      const { claim: updated } = await apiJson<{ claim: ClaimDto }>(`/api/claims/${claim.id}`, {
+      const { claim: updated } = await apiJson<{ claim: ClaimDto }>((endpoint ?? ((id: string) => `/api/claims/${id}`))(claim.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'received', receivedAmount: Math.round(amount * 100) / 100 }),

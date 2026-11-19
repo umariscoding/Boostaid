@@ -12,7 +12,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/', label: 'Clean', icon: Sparkles },
   { href: '/donors', label: 'Search', icon: Search },
   { href: '/claims', label: 'Claims', icon: Receipt },
-  { href: '/gasds', label: 'GASDS', icon: PieChart },
+  { href: '/gasds', label: 'Small donations', icon: PieChart },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
