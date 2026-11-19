@@ -1,0 +1,93 @@
+import type { claims } from '@/lib/db'
+
+export type ClaimRow = typeof claims.$inferSelect
+
+export interface ClaimDto {
+  id: string
+  ref: string
+  hmrcRef: string | null
+  status: 'pending' | 'submitted' | 'received'
+  donationCount: number
+  /** Sum of the donations in the claim (the schedule's "Total donations" box). */
+  totalAmount: number
+  /** What HMRC pays on those donations: 25%. */
+  giftAidAmount: number
+  notes: string | null
+  createdAt: string
+  submittedAt: string | null
+  receivedAt: string | null
+  /** What HMRC actually paid, or null if not received yet. */
+  receivedAmount: number | null
+  chunkIndex: number
+  /** 'UK' or 'Overseas' */
+  kind: string
+  /** The schedule's name, e.g. UK_schedule_1_of_4.ods */
+  fileName: string | null
+  sourceFile?: string
+  charityId?: string
+  charityName?: string
+  /** Earliest / latest donation date in the claim (yyyy-MM-dd). */
+  periodFrom?: string | null
+  periodTo?: string | null
+}
+
+export const GIFT_AID_RATE = 0.25
+export const giftAidOn = (donations: number) => Math.round(donations * GIFT_AID_RATE * 100) / 100
+
+export function toClaimDto(
+  row: ClaimRow,
+  sourceFile?: string,
+  period?: { from: string | null; to: string | null },
+  charity?: { id: string; name: string }
+): ClaimDto {
+  return {
+    id: row.id,
+    ref: row.ref,
+    hmrcRef: row.hmrcRef,
+    status: row.status,
+    donationCount: row.donationCount,
+    totalAmount: Number(row.totalAmount),
+    giftAidAmount: giftAidOn(Number(row.totalAmount)),
+    notes: row.notes,
+    createdAt: row.createdAt.toISOString(),
+    submittedAt: row.submittedAt?.toISOString() ?? null,
+    receivedAt: row.receivedAt?.toISOString() ?? null,
+    receivedAmount: row.receivedAmount === null || row.receivedAmount === undefined ? null : Number(row.receivedAmount),
+    chunkIndex: row.chunkIndex,
+    kind: row.kind,
+    fileName: row.fileName,
+    sourceFile,
+    periodFrom: period?.from ?? null,
+    periodTo: period?.to ?? null,
+    charityId: charity?.id,
+    charityName: charity?.name,
+  }
+}
+
+/** yyyy-MM-dd that is a real calendar date, otherwise null. */
+export function isoDateOrNull(value: unknown): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? '').trim())
+  if (!m) return null
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return dt.getUTCFullYear() === Number(m[1]) && dt.getUTCMonth() === Number(m[2]) - 1 && dt.getUTCDate() === Number(m[3]) ? m[0] : null
+}
+
+/** dd/MM/yyyy -> yyyy-MM-dd, or null if it isn't a real date. */
+export function ukDateToIso(value: unknown): string | null {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(value ?? '').trim())
+  if (!m) return null
+  const [, d, mo, y] = m
+  const dt = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)))
+  if (dt.getUTCFullYear() !== Number(y) || dt.getUTCMonth() !== Number(mo) - 1 || dt.getUTCDate() !== Number(d)) {
+    return null
+  }
+  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+}
+
+export function normalisePostcode(value: string): string {
+  return value.replace(/\s+/g, '').toUpperCase()
+}
+
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`)
+}

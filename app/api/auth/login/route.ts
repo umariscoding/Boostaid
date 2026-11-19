@@ -1,35 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { eq, sql } from 'drizzle-orm'
+import { getDb, users } from '@/lib/db'
+import { burnPasswordCheck, verifyPassword } from '@/lib/password'
+import { SESSION_COOKIE, SESSION_MAX_AGE, createSessionToken } from '@/lib/session'
 
-const VALID_EMAIL = 'admin@boostaid.com'
-const VALID_PASSWORD = 'Faiz@123'
+const MAX_ATTEMPTS = 5
+const LOCK_MINUTES = 15
+const BAD = { success: false, error: 'Invalid email or password' }
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json().catch(() => null)
+    const email = String(body?.email ?? '').trim().toLowerCase()
+    const password = String(body?.password ?? '')
+    if (!email || !password || password.length > 200) return NextResponse.json(BAD, { status: 401 })
 
-    if (email === VALID_EMAIL && password === VALID_PASSWORD) {
-      const response = NextResponse.json({ success: true })
-      
-      // Set HTTP-only cookie for session (expires in 7 days)
-      response.cookies.set('boostaid_session', 'authenticated', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: '/',
-      })
+    const db = getDb()
+    const [user] = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`)
 
-      return response
+    if (!user) {
+      await burnPasswordCheck(password) // same work as a real check, so timing doesn't reveal unknown emails
+      return NextResponse.json(BAD, { status: 401 })
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Invalid email or password' },
-      { status: 401 }
-    )
-  } catch {
-    return NextResponse.json(
-      { success: false, error: 'Something went wrong' },
-      { status: 500 }
-    )
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const mins = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000)
+      return NextResponse.json(
+        { success: false, error: `Too many wrong attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.` },
+        { status: 429 }
+      )
+    }
+
+    if (!(await verifyPassword(password, user.passwordHash))) {
+      const attempts = user.failedAttempts + 1
+      await db
+        .update(users)
+        .set(attempts >= MAX_ATTEMPTS ? { failedAttempts: 0, lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60000) } : { failedAttempts: attempts })
+        .where(eq(users.id, user.id))
+      return NextResponse.json(BAD, { status: 401 })
+    }
+
+    await db.update(users).set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() }).where(eq(users.id, user.id))
+
+    const response = NextResponse.json({ success: true })
+    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_MAX_AGE,
+      path: '/',
+    })
+    return response
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ success: false, error: 'Something went wrong' }, { status: 500 })
   }
 }

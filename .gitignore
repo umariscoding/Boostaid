@@ -1,2 +1,24 @@
 /node_modules
 /.next
+# env
+.env*
+!.env.example
+
+# misc
+.DS_Store
+*.tsbuildinfo
+
+# Donor spreadsheets must never be committed (public repo); the HMRC template lives in public/
+/*.xlsx
+/*.xls
+/*.csv
+
+# Client handover pack: contains real donor data in the example/expected claim packs
+/BoostAid_handover/
+/BoostAid_handover*.zip
+
+# Vercel project link
+.vercel
+
+# Client design prototype (reference only)
+/BoostAid Dashboard Demo*.html

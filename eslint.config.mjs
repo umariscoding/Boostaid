@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Client handover pack (reference material, not part of the app)
+    "BoostAid_handover/**",
   ]),
 ]);
 

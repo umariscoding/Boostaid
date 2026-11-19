@@ -1,0 +1,1 @@
+ALTER TABLE "claims" ADD COLUMN "received_amount" numeric(12, 2);
