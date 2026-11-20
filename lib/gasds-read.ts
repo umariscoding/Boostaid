@@ -64,6 +64,13 @@ export function fileToCsv(name: string, data: Uint8Array): string {
   return new TextDecoder('utf-8').decode(data)
 }
 
+/** True for the headings of a receipt book export, a banking export or the BoostAid GASDS template (not Gift Aid donations). */
+export function looksLikeGasds(headers: unknown[]): boolean {
+  const h = headers.map((x) => String(x ?? '').trim().toLowerCase())
+  const has = (n: string) => h.includes(n)
+  return has('paying-in slip') || has('counted in envelope') || (has('banked') && has('gift aid') && (has('receipt no') || has('paid by') || has('type')))
+}
+
 export const isBankingCsv = (csv: string) => /counted in envelope/i.test(csv.split(/\r?\n/)[0] ?? '')
 
 const COLS = {

@@ -127,7 +127,7 @@ export default function AdminPage() {
   const months = useMemo(() => [...new Set((data?.archive ?? []).map((a) => monthOf(a.paidAt)).filter(Boolean))], [data])
   const shown = useMemo(() => (data?.archive ?? []).filter((a) => month === 'all' || monthOf(a.paidAt) === month), [data, month])
 
-  const header = <PageHeader title="BoostAid admin" subtitle="What you see as the owner of BoostAid. Charities never see this page." />
+  const header = <PageHeader title="BoostAid admin" subtitle="What you see as the owner of BoostAid. Charities never see this page." action={null} />
   if (forbidden) return <>{header}<Card className="max-w-xl p-8"><div className="font-display text-xl font-semibold text-ink">This page is for the BoostAid admin only</div><p className="mt-2 text-muted">Your login doesn’t have access to it.</p></Card></>
   if (!data) {
     return (

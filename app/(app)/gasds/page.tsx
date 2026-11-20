@@ -124,7 +124,12 @@ export default function SmallDonationsPage() {
 
   const header = (
     <div>
-      <PageHeader title="Small donations" subtitle="HMRC adds 25% to cash and card donations of £30 or less. This is called GASDS." />
+      <PageHeader
+        title="Small donations"
+        subtitle="HMRC adds 25% to cash and card donations of £30 or less. This is called GASDS."
+        // This page has its own upload (receipts and banking files). The default "Upload new file" would send you to Clean.
+        action={charityId ? <Button size="lg" variant="dark" disabled={!d} onClick={() => setUploadOpen(true)}>Upload receipts</Button> : null}
+      />
     </div>
   )
 

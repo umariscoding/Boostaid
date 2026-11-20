@@ -24,6 +24,7 @@ import { buildSimpleSheets, simpleSheetName } from '@/lib/claim-extras'
 import OptionalChecks from '@/components/claim-optional-checks'
 import RecoveryPanel from '@/components/recovery/recovery-panel'
 import { heldBackRows, rowKey } from '@/lib/recovery'
+import { looksLikeGasds } from '@/lib/gasds-read'
 import { CASH_BOOK_HEADINGS } from '@/lib/claim-flow'
 import type { RecoveryRowDto } from '@/app/api/recovery/route'
 
@@ -130,6 +131,10 @@ export default function ClaimBuilder() {
       return t
     })
     allTables.current = tables
+    // Small donations (GASDS) files are uploaded on their own page, not here
+    if (tables.some((t) => looksLikeGasds(t.rows[0] ?? []))) {
+      throw new Error('This looks like a small donations (GASDS) file: a receipt list, a banking export or the BoostAid template. Upload it on the Small donations page, using “Upload receipts”. This page is for Gift Aid donation exports.')
+    }
     const effective = tables.map((t) => mapped[tableKey(t)] ?? t)
 
     // Before anything is saved: donations already claimed for this charity are taken out of this claim

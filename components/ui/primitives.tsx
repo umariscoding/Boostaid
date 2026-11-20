@@ -75,7 +75,7 @@ export function Pill({
   )
 }
 
-/** Page title row. The right-hand action defaults to the "Upload new file" shortcut. */
+/** Page title row. The right-hand action defaults to the "Upload new file" shortcut (to Clean); pass `null` for no action. */
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
@@ -83,7 +83,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
         <h1 className="font-display text-4xl font-bold tracking-tight text-ink">{title}</h1>
         {subtitle && <p className="text-muted mt-2">{subtitle}</p>}
       </div>
-      {action ?? (
+      {action !== undefined ? action : (
         <Link
           href="/"
           className="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-white hover:bg-black"
