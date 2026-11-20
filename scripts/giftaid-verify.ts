@@ -15,7 +15,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import * as XLSX from 'xlsx'
-import { houseFrom, buildClaim, readTables, buildClaimPack } from '../lib/giftaid'
+import { houseFrom, buildClaim, readTables, buildClaimPack, type ClaimRow } from '../lib/giftaid'
 
 const args = process.argv.slice(2)
 const dir = args[0]
@@ -70,7 +70,7 @@ async function main() {
       const sheetRows = (name: string) => XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[name] ?? {}, { defval: null, raw: true })
       const str = (v: unknown) => (v === null || v === undefined ? '' : String(v))
       const ddmmyy = (iso: string | null) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(2, 4)}` : '')
-      const compare = (label: string, ref: Record<string, unknown>[], ours: any[], fields: [string, (r: any) => unknown][]) => {
+      const compare = <T extends { source: string }>(label: string, ref: Record<string, unknown>[], ours: T[], fields: [string, (r: T) => unknown][]) => {
         const bySource = new Map(ours.map((r) => [r.source, r]))
         let bad = 0
         for (const rr of ref) {
@@ -85,7 +85,7 @@ async function main() {
         if (ref.length !== ours.length) fail(`${label}: reference has ${ref.length} rows, ours ${ours.length}`)
         console.log(`  ${bad ? '✗' : '✓'} ${label}: ${ref.length} rows compared with the reference${bad ? `, ${bad} differences` : ', all identical'}`)
       }
-      const claimFields: [string, (r: any) => unknown][] = [
+      const claimFields: [string, (r: ClaimRow) => unknown][] = [
         ['HMRC file', (r) => r.hmrcFile], ['HMRC row', (r) => r.hmrcRow], ['Title', (r) => r.title], ['First Name', (r) => r.firstName],
         ['Last Name', (r) => r.lastName], ['House', (r) => r.house], ['Postcode', (r) => r.postcode], ['Date', (r) => ddmmyy(r.date)], ['Amount', (r) => r.amount],
       ]

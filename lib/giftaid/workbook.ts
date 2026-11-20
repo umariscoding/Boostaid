@@ -10,9 +10,9 @@ import { toDDMMYY } from './dates'
 import { s } from './text'
 import { summaryLines, type Fingerprint } from './summary'
 
-type Col = { header: string; get: (r: any) => unknown; width?: number }
+type Col<T> = { header: string; get: (r: T) => unknown; width?: number }
 
-function addTable(wb: ExcelJS.Workbook, name: string, rows: any[], cols: Col[], colour: string) {
+function addTable<T>(wb: ExcelJS.Workbook, name: string, rows: T[], cols: Col<T>[], colour: string) {
   const ws = wb.addWorksheet(name)
   ws.columns = cols.map((c) => ({ header: c.header, width: c.width ?? Math.max(12, Math.min(30, c.header.length + 4)) }))
   const head = ws.getRow(1)
@@ -22,7 +22,7 @@ function addTable(wb: ExcelJS.Workbook, name: string, rows: any[], cols: Col[], 
   ws.views = [{ state: 'frozen', ySplit: 1 }]
 }
 
-const claimCols: Col[] = [
+const claimCols: Col<ClaimRow>[] = [
   { header: 'HMRC file', get: (r: ClaimRow) => r.hmrcFile, width: 28 },
   { header: 'HMRC row', get: (r: ClaimRow) => r.hmrcRow },
   { header: 'Title', get: (r: ClaimRow) => r.title || null },

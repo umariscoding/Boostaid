@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { charities, donations, getDb, invoices } from '@/lib/db'
 import { addNotification, claimsWithRecovery, type ClaimRecovery } from '@/lib/admin-db'
 import { buildInvoicePdf, business, type InvoiceData } from '@/lib/invoice-pdf'
@@ -52,32 +52,50 @@ export async function previewInvoice(claimId: string) {
   return { ...data, sentAt: data.sentAt.toISOString(), dueAt: data.dueAt.toISOString(), to: ch?.contactEmail ?? '', canSend: c.status === 'received' }
 }
 
-/** Sends the invoice for one claim. Only possible once the claim is received, and only once. */
+/**
+ * Sends the invoice for one claim. Only possible once the claim is received, and only once: the invoice row is claimed
+ * first, under a lock for that claim, so a double click (or two people at once) can never email it twice.
+ */
 export async function sendInvoice(claimId: string) {
   const db = getDb()
   const [c] = await claimsWithRecovery({ claimId })
   if (!c) throw new RangeError('That claim has no recovered Gift Aid')
   if (c.status !== 'received') throw new RangeError('An invoice can only be sent once the claim is marked received')
-  const [existing] = await db.select().from(invoices).where(eq(invoices.claimId, claimId))
-  if (existing) throw new RangeError(`${existing.number} has already been sent`)
   const [ch] = await db.select().from(charities).where(eq(charities.id, c.charityId))
   if (!ch?.contactEmail) throw new RangeError(`Add a contact email for ${c.charityName} in Settings first (the invoice is sent there)`)
 
   const sentAt = new Date()
   const dueAt = addDays(sentAt, INVOICE_DAYS)
   const data = await invoiceData(c, sentAt, dueAt)
-  const { delivered } = await emailInvoice(c, ch.contactEmail, data)
-  const [inv] = await db
-    .insert(invoices)
-    .values({ charityId: c.charityId, claimId, number: data.number, recoveredPaid: c.recoveredPaid.toFixed(2), fee: c.fee.toFixed(2), sentAt, dueAt, sentTo: ch.contactEmail, delivered })
-    .returning()
+
+  // 1. Claim the invoice. A second request for the same claim waits here, then finds it taken and stops.
+  const inv = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'invoice:' + claimId}))`)
+    const [existing] = await tx.select().from(invoices).where(eq(invoices.claimId, claimId))
+    if (existing) throw new RangeError(`${existing.number} has already been sent`)
+    const [created] = await tx
+      .insert(invoices)
+      .values({ charityId: c.charityId, claimId, number: data.number, recoveredPaid: c.recoveredPaid.toFixed(2), fee: c.fee.toFixed(2), sentAt, dueAt, sentTo: ch.contactEmail!, delivered: false })
+      .returning()
+    return created
+  })
+
+  // 2. Email it. If that fails, give the claim back so it can be sent again.
+  let delivered: boolean
+  try {
+    delivered = (await emailInvoice(c, ch.contactEmail, data)).delivered
+  } catch (e) {
+    await db.delete(invoices).where(eq(invoices.id, inv.id))
+    throw e
+  }
+  await db.update(invoices).set({ delivered }).where(eq(invoices.id, inv.id))
   await addNotification({
     type: 'invoice_sent',
     charityId: c.charityId,
     claimId,
     text: delivered ? `Invoice ${data.number} emailed to ${c.charityName}.` : `Invoice ${data.number} recorded for ${c.charityName}. It was NOT emailed because no email service is connected.`,
   })
-  return inv
+  return { ...inv, delivered }
 }
 
 export async function resendInvoice(invoiceId: string) {

@@ -28,14 +28,7 @@ export function summaryLines(res: ClaimResult): [string, string, string][] {
     ['Total Gift Aid value', gbp(t.ukDonations + t.overseasDonations), 'donations being claimed on'],
     ['Estimated Gift Aid reclaimable', gbp(t.giftAid), '25% of the above'],
     ['Records needing attention', int(res.review.length), 'held back - see the Needs Review tab for the reason on each row'],
-    [
-      'Ready to claim now',
-      `${Math.round(t.compliancePct)}%`,
-      `${int(claimed)} of ${int(claimed + res.review.length)} Gift Aid donations. ` +
-        (res.review.length
-          ? `The other ${int(res.review.length)} are held back for checking, so nothing doubtful goes to HMRC`
-          : 'Nothing held back'),
-    ],
+    ['Compliance rate', `${Math.round(t.compliancePct)}%`, 'claimed ÷ (claimed + needing attention)'],
   ]
 }
 

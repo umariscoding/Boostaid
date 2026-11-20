@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, PageHeader, StatTile, th, thr, td, tdr } from '@/components/ui/primitives'
@@ -64,6 +64,13 @@ export default function AdminPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [month, setMonth] = useState('all')
+  // A second click while an action is running is ignored (state updates too late to stop a fast double click)
+  const working = useRef(false)
+  const once = async (fn: () => Promise<void>) => {
+    if (working.current) return
+    working.current = true
+    try { await fn() } finally { working.current = false }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -88,7 +95,7 @@ export default function AdminPage() {
     catch (e) { setError((e as Error).message) }
     finally { setBusy(null) }
   }
-  const sendInvoice = async () => {
+  const sendInvoice = () => once(async () => {
     if (!preview) return
     setBusy('send')
     try {
@@ -99,20 +106,20 @@ export default function AdminPage() {
       await load()
     } catch (e) { setPreview(null); setError((e as Error).message) }
     finally { setBusy(null) }
-  }
-  const markPaid = async (id: string, num: string) => {
+  })
+  const markPaid = (id: string, num: string) => once(async () => {
     setBusy(id)
     try { await post(`/api/admin/invoices/${id}`, { action: 'paid' }, 'PATCH'); say(`${num} marked paid`); await load() }
     catch (e) { setError((e as Error).message) }
     finally { setBusy(null) }
-  }
-  const resend = async (id: string, num: string) => {
+  })
+  const resend = (id: string, num: string) => once(async () => {
     setBusy(id)
     try { const r = (await post(`/api/admin/invoices/${id}`, { action: 'resend' }, 'PATCH')) as { delivered: boolean }; say(r.delivered ? `${num} sent again` : `${num} NOT emailed: no email service is connected`); await load() }
     catch (e) { setError((e as Error).message) }
     finally { setBusy(null) }
-  }
-  const sendAll = async () => {
+  })
+  const sendAll = () => once(async () => {
     setBusy('all')
     setError(null)
     try {
@@ -122,7 +129,7 @@ export default function AdminPage() {
       await load()
     } catch (e) { setError((e as Error).message) }
     finally { setBusy(null) }
-  }
+  })
 
   const months = useMemo(() => [...new Set((data?.archive ?? []).map((a) => monthOf(a.paidAt)).filter(Boolean))], [data])
   const shown = useMemo(() => (data?.archive ?? []).filter((a) => month === 'all' || monthOf(a.paidAt) === month), [data, month])
