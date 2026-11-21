@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, FileUp, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { apiJson, gbp } from '@/components/claims/shared'
@@ -41,11 +41,14 @@ export default function UploadDialog({
 function UploadForm({ ctx, onClose, onDone }: { ctx: UploadContext; onClose: () => void; onDone: UploadDialogDone }) {
   const [read, setRead] = useState<ReadResult | null>(null)
   const [reading, setReading] = useState(false)
+  const [names, setNames] = useState<string[]>([])
+  const [over, setOver] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const pick = async (files: FileList | null) => {
     if (!files?.length) return
+    setNames([...files].map((f) => f.name))
     setReading(true)
     setError(null)
     try {
@@ -108,17 +111,27 @@ function UploadForm({ ctx, onClose, onDone }: { ctx: UploadContext; onClose: () 
   return (
     <div className="space-y-4">
       <h2 className="font-display text-xl font-semibold text-ink">Upload your receipts</h2>
-      <div className="rounded-xl border border-dashed border-line-strong p-4">
-        <label className="font-semibold text-ink" htmlFor="gasds-files">Choose your files</label>
-        <input id="gasds-files" type="file" multiple accept=".csv,.xlsx,.xls,text/csv" onChange={(e) => pick(e.target.files)} className="mt-2 block max-w-full text-sm" />
-        <p className="mt-2 text-sm text-muted">
-          Your receipt book exports (receipt list and banking), or the BoostAid template. You can choose several at once. They are read on this
-          computer first, so you can check them before anything is saved.
-        </p>
-        <a href="/templates/BoostAid_GASDS_template.xlsx" className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-brand underline">
-          <Download className="h-4 w-4" /> Download the BoostAid template
-        </a>
-      </div>
+      {/* The whole box is the button: click it, or drop files on it */}
+      <label
+        htmlFor="gasds-files"
+        onDragOver={(e) => { e.preventDefault(); setOver(true) }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); pick(e.dataTransfer.files) }}
+        className={`block cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${over ? 'border-brand bg-brand-soft/60' : 'border-[#cfc9e8] bg-[#faf9ff] hover:border-brand/50 hover:bg-brand-soft/40'}`}
+      >
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-line bg-white"><FileUp className="h-5 w-5 text-brand" /></div>
+        <div className="font-display text-lg font-semibold text-ink">{names.length ? `${names.length} file${names.length === 1 ? '' : 's'} chosen` : 'Drop your files here'}</div>
+        <div className="mt-1 text-sm text-muted">{names.length ? 'Click to choose different files' : 'or click to browse. CSV or Excel, and you can pick several at once.'}</div>
+        <span className="mt-4 inline-flex h-11 items-center rounded-full bg-ink px-6 text-sm font-medium text-white">{names.length ? 'Choose other files' : 'Choose files'}</span>
+        <input id="gasds-files" type="file" multiple accept=".csv,.xlsx,.xls,text/csv" onChange={(e) => { pick(e.target.files); e.target.value = '' }} className="sr-only" />
+      </label>
+      {names.length > 0 && <ul className="space-y-0.5 text-sm text-muted">{names.map((n) => <li key={n} className="truncate">✓ {n}</li>)}</ul>}
+      <p className="text-sm text-muted">
+        Your receipt book exports (receipt list and banking), or the BoostAid template. They are read on this computer first, so you can check them before anything is saved.
+      </p>
+      <a href="/templates/BoostAid_GASDS_template.xlsx" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand underline">
+        <Download className="h-4 w-4" /> Download the BoostAid template
+      </a>
       {reading && <p className="text-sm text-muted">Reading…</p>}
       {read?.errors.length ? <div role="alert" className="rounded-xl border border-bad-line bg-bad-soft px-4 py-3 text-sm font-medium text-bad">{read.errors.join(' ')}</div> : null}
 
