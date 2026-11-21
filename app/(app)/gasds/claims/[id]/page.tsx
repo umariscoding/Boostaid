@@ -2,24 +2,14 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Download, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, PageHeader, th, thr, td, tdr } from '@/components/ui/primitives'
 import { Skeleton } from '@/components/ui/skeleton'
-import { apiJson, fmtDay, gbp } from '@/components/claims/shared'
-import { countTotal, p, showNo, taxYearLabel, topUpOf, ukDate, who, type GReceipt } from '@/lib/gasds'
+import { apiJson, gbp } from '@/components/claims/shared'
+import { countText, p, showNo, taxYearLabel, ukDate, who, type GReceipt } from '@/lib/gasds'
+import { RULES_TEXT, evidenceSummary } from '@/lib/gasds-summary'
 import type { GasdsClaimDto } from '@/lib/gasds-db'
-
-function countText(r: GReceipt): string {
-  if (r.gift) return 'Single gift, the receipt is the record'
-  if (r.card) return 'Card payments, no notes'
-  if (!r.count) return r.photo ? `Photo of count sheet: ${r.photo}` : 'Not recorded'
-  const c = r.count
-  const parts: string[] = []
-  for (const [k, v] of [['n50', 50], ['n20', 20], ['n10', 10], ['n5', 5]] as const) if (c[k]) parts.push(`${c[k]} × £${v}`)
-  if (c.coins) parts.push(`${gbp(c.coins)} coins`)
-  return `${parts.join(', ')} = ${gbp(countTotal(c))}${r.photo ? ' (+ photo)' : ''}`
-}
 
 /** What an auditor needs for one small donations claim: the claim, the Gift Aid rule, and each receipt with its counts and slip. */
 export default function GasdsEvidencePage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,9 +30,6 @@ export default function GasdsEvidencePage({ params }: { params: Promise<{ id: st
   if (!data) return <>{back}<div className="mt-4 space-y-4" aria-busy="true"><Skeleton className="h-10 w-64" /><Skeleton className="h-56 w-full rounded-2xl" /></div></>
 
   const { claim: c, charity, receipts } = data
-  const needed = Math.ceil(p(c.amount) / 10) / 100
-  const enough = p(c.giftAidFigure) >= p(needed)
-  const row = (label: string, value: React.ReactNode) => (<><dt className="text-muted">{label}</dt><dd className="text-right font-semibold tabular-nums">{value}</dd></>)
 
   return (
     <div className="space-y-6">
@@ -50,24 +37,26 @@ export default function GasdsEvidencePage({ params }: { params: Promise<{ id: st
       <PageHeader
         title={`Evidence · ${c.hmrcRef}`}
         subtitle={`${charity} · small donations claim for ${taxYearLabel(c.taxYear)}`}
-        action={<Button variant="outline" onClick={() => window.print()} className="print:hidden"><Printer className="h-4 w-4" /> Print or save as PDF</Button>}
+        action={
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" /> Print or save as PDF</Button>
+            <a href={`/api/gasds/claims/${id}/evidence`}><Button variant="dark"><Download className="h-4 w-4" /> Download (printout + Excel)</Button></a>
+          </div>
+        }
       />
 
       <Card className="max-w-2xl p-6">
         <dl className="grid grid-cols-[1fr_auto] gap-x-8 gap-y-2 text-base">
-          {row('Charity', charity)}
-          {row('Tax year', taxYearLabel(c.taxYear))}
-          {row('Sent to HMRC', `${fmtDay(c.sentAt)}${c.sentBy ? ` by ${c.sentBy}` : ''}`)}
-          {row('HMRC reference', c.hmrcRef)}
-          {row('Small donations claimed', gbp(c.amount))}
-          {row('HMRC pays (25%)', gbp(topUpOf(c.amount)))}
-          {row('Status', c.status === 'received' ? `Received ${fmtDay(c.receivedAt)}${c.receivedAmount != null ? ` · ${gbp(c.receivedAmount)}` : ''}` : 'Waiting for HMRC')}
-          {row('Gift Aid needed (1/10 of the claim)', gbp(needed))}
-          {row(`Gift Aid the charity claimed for ${taxYearLabel(c.taxYear)}`, <span className={enough ? 'text-good' : 'text-bad'}>{gbp(c.giftAidFigure)} {enough ? '✓' : '✗'}</span>)}
+          {evidenceSummary(c, charity).map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-muted">{k}</dt>
+              <dd className={`text-right font-semibold tabular-nums ${v.endsWith('✗') ? 'text-bad' : v.endsWith('✓') ? 'text-good' : ''}`}>{v}</dd>
+            </div>
+          ))}
         </dl>
       </Card>
 
-      <Card className="overflow-x-auto">
+      <Card className="overflow-x-auto print:hidden">
         <table className="w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-line">
@@ -102,7 +91,7 @@ export default function GasdsEvidencePage({ params }: { params: Promise<{ id: st
         </table>
       </Card>
 
-      <p className="text-sm text-muted">Rules applied: cash or card only; £30 or less from one person; no Gift Aid declaration; banked in the charity’s UK account; £50 notes taken off; cancelled receipts skipped.</p>
+      <p className="text-sm text-muted">{RULES_TEXT}</p>
     </div>
   )
 }

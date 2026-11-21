@@ -284,3 +284,15 @@ export function previewUpload(
     return { receipt: r, action, status: { group: 'in', label: 'Included', reason: fit < c ? 'part of it (the limit is reached)' : '' }, used: fit / 100 }
   })
 }
+
+/** How a receipt's count is shown in the evidence (page, Excel and PDF). */
+export function countText(r: GReceipt): string {
+  if (r.gift) return 'Single gift, the receipt is the record'
+  if (r.card) return 'Card payments, no notes'
+  if (!r.count) return r.photo ? `Photo of count sheet: ${r.photo}` : 'Not recorded'
+  const c = r.count
+  const parts: string[] = []
+  for (const [k, v] of [['n50', 50], ['n20', 20], ['n10', 10], ['n5', 5]] as const) if (c[k]) parts.push(`${c[k]} × £${v}`)
+  if (c.coins) parts.push(`${gbp(c.coins)} coins`)
+  return `${parts.join(', ')} = ${gbp(countTotal(c))}${r.photo ? ' (+ photo)' : ''}`
+}

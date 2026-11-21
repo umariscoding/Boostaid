@@ -64,7 +64,7 @@ export default function Sidebar() {
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
-    <aside className="bg-side text-white md:w-60 md:shrink-0 md:min-h-screen md:sticky md:top-0 md:h-screen flex flex-col">
+    <aside className="print:hidden bg-side text-white md:w-60 md:shrink-0 md:min-h-screen md:sticky md:top-0 md:h-screen flex flex-col">
       <div className="px-5 pt-6 md:pt-7 pb-3 md:pb-4 flex items-center gap-3">
         <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center">
           <Gift className="w-5 h-5 text-white" />
